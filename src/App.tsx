@@ -5,6 +5,8 @@ import AppNavigator from "./navigator/AppNavigator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { UiProvider } from "./context/UiProvider";
 import { CustomBottomSheetProvider } from "@context/CustomBottomSheetProvider";
+import { NetworkProvider } from "@context/NetworkProvider";
+import React from "react";
 
 export default function App() {
   return (
@@ -13,7 +15,9 @@ export default function App() {
         <SafeAreaView style={{ flex: 1 }}>
           <UiProvider>
             <CustomBottomSheetProvider>
-              <AppNavigator />
+              <NetworkProvider>
+                <AppNavigator />
+              </NetworkProvider>
             </CustomBottomSheetProvider>
           </UiProvider>
         </SafeAreaView>

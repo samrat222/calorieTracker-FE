@@ -14,10 +14,12 @@ import {
   BottomSheetModalProvider,
 } from "@gorhom/bottom-sheet";
 import { useUI } from "./UiProvider";
+import { useBottomSheetBackHandler } from "@utils/bottomSheetUtils";
 
 interface ShowBottomSheetProps {
   view: ReactNode;
   backDropAction?: () => void;
+  extraAction?:()=>void;
   snapPoints?: string[];
 }
 
@@ -25,6 +27,7 @@ interface CustomBottomSheetContextTypes {
   showBottomSheet: (props: ShowBottomSheetProps) => Promise<void>;
   hideBottomSheet: () => Promise<void>;
   isVisible: boolean;
+  bottomSheetRef:React.RefObject<BottomSheetModal | null>;
 }
 
 const CustomBottomSheetContext = createContext<
@@ -42,11 +45,14 @@ export const CustomBottomSheetProvider = ({
   const { theme } = useUI();
   const [snapPoints, setSnapPoints] = useState<string[] | null>(null);
   const backDropActionRef = useRef<(() => void) | null>(null);
+  const extraActionRef = useRef<(() => void) | null>(null);
+  const {handleSheetPositionChange} = useBottomSheetBackHandler(bottomSheetRef)
 
   const showBottomSheet = async ({
     view,
     backDropAction,
     snapPoints,
+    extraAction
   }: ShowBottomSheetProps): Promise<void> => {
     if (snapPoints?.length) {
       setSnapPoints(() => snapPoints);
@@ -54,12 +60,15 @@ export const CustomBottomSheetProvider = ({
     if (backDropAction) {
       backDropActionRef.current = backDropAction;
     }
+
+    if(extraAction) extraActionRef.current = extraAction;
     setContent(() => view);
     setIsVisible(true);
   };
 
   const hideBottomSheet = async () => {
     bottomSheetRef.current?.dismiss();
+    extraActionRef?.current?.();
   };
 
   const renderBackdrop = useCallback(
@@ -88,13 +97,17 @@ export const CustomBottomSheetProvider = ({
 
   return (
     <CustomBottomSheetContext.Provider
-      value={{ isVisible, hideBottomSheet, showBottomSheet }}
+      value={{ isVisible, hideBottomSheet, showBottomSheet,bottomSheetRef }}
     >
       {children}
       {isVisible && (
         <BottomSheetModalProvider>
           <BottomSheetModal
             ref={bottomSheetRef}
+            onChange={(index,position,type) => {
+              handleSheetPositionChange(index,position,type);
+              if (index === -1) extraActionRef?.current?.();
+            }}
             enableHandlePanningGesture={
               backDropActionRef?.current === null ? true : false
             }

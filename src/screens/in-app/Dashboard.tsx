@@ -1,11 +1,14 @@
-import { View, Text } from "react-native";
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { useCustomBottomSheet } from "@context/CustomBottomSheetProvider";
 import CustomButton from "@components/CustomButton";
 import BottomSheetAction from "@components/BottomSheetAction";
+import { Button, View } from "react-native";
+import { useUI } from "@context/UiProvider";
+
 
 const Dashboard: FC = () => {
   const { showBottomSheet, hideBottomSheet } = useCustomBottomSheet();
+  const {theme} = useUI();
   const handleOpen = async () => {
     await showBottomSheet({
       view: (
@@ -19,9 +22,8 @@ const Dashboard: FC = () => {
     });
   };
 
- 
   return (
-    <View style={{flex:1,justifyContent:'center',padding:16}}>
+    <View style={{ flex: 1, justifyContent: "center", padding: 16,backgroundColor:theme.background }}>
       <CustomButton title="Open Bottom Sheet" onPress={handleOpen} />
     </View>
   );

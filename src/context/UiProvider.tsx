@@ -20,7 +20,7 @@ import { THEME } from "../utils/colors";
 
 interface ToastMessageProps {
   visible?: boolean;
-  theme?: (typeof THEME)[ThemeMode] ;
+  theme?: (typeof THEME)[ThemeMode];
   success: boolean;
   title: string;
   message: string;
@@ -34,6 +34,7 @@ type ThemeMode = "light" | "dark";
 interface UIContextType {
   theme: (typeof THEME)[ThemeMode];
   setAppTheme: React.Dispatch<React.SetStateAction<ColorSchemeName>>;
+  appTheme: ColorSchemeName;
   fullscreenLoading: boolean;
   setFullscreenLoading: React.Dispatch<React.SetStateAction<boolean>>;
   showToast: React.Dispatch<React.SetStateAction<ToastMessageProps>>;
@@ -152,7 +153,7 @@ const ToastMessage: FC<ToastMessageProps> = ({
 };
 
 const FullscreenLoader = ({ show }: { show: boolean }) => {
-  const {theme} = useUI();
+  const { theme } = useUI();
   return (
     <Modal animationType="fade" transparent visible={show}>
       <View
@@ -197,6 +198,7 @@ export const UiProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         theme,
         setAppTheme,
+        appTheme,
         fullscreenLoading,
         setFullscreenLoading,
         showToast,
