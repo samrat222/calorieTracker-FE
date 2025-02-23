@@ -23,3 +23,17 @@ type font = {
   SemiBold: string;
   Bold: string;
 };
+
+type ThemeMode = "light" | "dark";
+
+interface ToastMessageProps {
+  visible?: boolean;
+  theme?: (typeof THEME)[ThemeMode];
+  success: boolean;
+  title: string;
+  message: string;
+  duration?: number;
+  onClose?: any;
+  canClose?: boolean;
+}
+

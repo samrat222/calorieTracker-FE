@@ -5,6 +5,8 @@ import Profile from "@screens/in-app/Profile";
 import Setting from "@screens/in-app/Setting";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useUI } from "@context/UiProvider";
+import { TouchableOpacity } from "react-native";
+import { Moon, Sun } from "lucide-react-native";
 
 const BottomTabs = createBottomTabNavigator<BottomStackParamList>();
 
@@ -28,16 +30,30 @@ const getBottomTabsIcon = (
 };
 
 const BottomTabsNavigator = () => {
-  const { theme } = useUI();
+  const { theme, toggleTheme, appTheme } = useUI();
   return (
     <BottomTabs.Navigator
       initialRouteName="HOME"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) =>
           getBottomTabsIcon(route.name, color, size),
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.text.secondary,
+        tabBarActiveTintColor: theme.text.primary,
+        tabBarInactiveTintColor: theme.descriptionTextColor,
         animation: "shift",
+        headerStyle:{backgroundColor:theme.background},
+        headerTitleStyle:{color:theme.text.primary},
+        tabBarStyle:{
+          backgroundColor:theme.background,
+        },
+        headerRight: () => (
+          <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 15 }}>
+            {appTheme === "light" ? (
+              <Moon size={24} color="#000" />
+            ) : (
+              <Sun size={24} color="#fff" />
+            )}
+          </TouchableOpacity>
+        ),
       })}
     >
       <BottomTabs.Screen name="HOME" component={Dashboard} />
