@@ -15,7 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>('sfs');
   const [loading, setLoading] = useState<boolean>(true);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);

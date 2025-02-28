@@ -11,6 +11,7 @@ import NetworkLogsTracker from "@components/NetworkLogsTracker";
 import { BUILD_FOR_PRODUCTION } from "src/constants/constants";
 import { useUI } from "@context/UiProvider";
 import switchTheme from "react-native-theme-switch-animation";
+import DrawerNavigator from "./DrawerNavigator";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,7 +26,7 @@ const AppNavigator = () => {
             <RootStack.Group>
               <RootStack.Screen
                 name="DASHBOARD"
-                component={BottomTabsNavigator}
+                component={DrawerNavigator}
               />
             </RootStack.Group>
           ) : (

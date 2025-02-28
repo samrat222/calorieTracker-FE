@@ -54,6 +54,7 @@ const BottomTabsNavigator = () => {
             )}
           </TouchableOpacity>
         ),
+        headerShown:false
       })}
     >
       <BottomTabs.Screen name="HOME" component={Dashboard} />
