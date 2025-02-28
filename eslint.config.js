@@ -1,4 +1,5 @@
-import babelParser from "@babel/eslint-parser";
+import tsParser from "@typescript-eslint/parser"; // ✅ Import TypeScript parser
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import prettierPlugin from "eslint-plugin-prettier";
@@ -10,7 +11,7 @@ export default [
   {
     files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
     languageOptions: {
-      parser: babelParser,
+      parser: tsParser,
       parserOptions: {
         requireConfigFile: false,
         babelOptions: {
@@ -21,6 +22,7 @@ export default [
       sourceType: "module",
     },
     plugins: {
+      "@typescript-eslint": tsPlugin,
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       prettier: prettierPlugin,

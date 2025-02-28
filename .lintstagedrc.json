@@ -4,7 +4,7 @@
     ],
     "*.{js,vue,ts,tsx}": [
       "prettier --write",
-      "eslint --fix", 
+      "eslint --config eslint.config.js --fix",
       "vitest related --run --environment=jsdom"
     ]
   }

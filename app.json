@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "base-project",
+    "name": "Base Project",
     "slug": "base-project",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,7 @@
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.baseproject"
+      "package": "com.mobileapp.base"
     },
     "web": {
       "favicon": "./src/assets/favicon.png"

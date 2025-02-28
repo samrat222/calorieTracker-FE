@@ -1,4 +1,4 @@
-package com.anonymous.baseproject
+package com.mobileapp.base
 
 import android.app.Application
 import android.content.res.Configuration
