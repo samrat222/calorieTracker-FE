@@ -2,9 +2,9 @@
     "*.css": [
       "prettier --write"
     ],
-    "*.{js,vue}": [
+    "*.{js,vue,ts,tsx}": [
       "prettier --write",
-      "eslint --ignore-path .gitignore --fix",
+      "eslint --fix", 
       "vitest related --run --environment=jsdom"
     ]
   }

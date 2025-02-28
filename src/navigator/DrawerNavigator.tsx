@@ -48,15 +48,7 @@ const DrawerNavigator = () => {
       }}
     >
       <Drawer.Group>
-        <Drawer.Screen
-          name="Home"
-          component={BottomTabsNavigator}
-
-
-
-
-          
-        />
+        <Drawer.Screen name="Home" component={BottomTabsNavigator} />
         <Drawer.Screen name="Profile" component={Profile} />
         <Drawer.Screen name="Setting" component={Setting} />
       </Drawer.Group>
