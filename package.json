@@ -7,7 +7,9 @@
     "dev": "npx expo run:android --device",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -40,6 +42,8 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
     "typescript": "^5.3.3"
   },
   "private": true

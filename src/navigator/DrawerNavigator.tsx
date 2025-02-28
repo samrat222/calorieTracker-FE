@@ -51,7 +51,6 @@ const DrawerNavigator = () => {
         <Drawer.Screen
           name="Home"
           component={BottomTabsNavigator}
-          // options={{ headerShown: false }}
         />
         <Drawer.Screen name="Profile" component={Profile} />
         <Drawer.Screen name="Setting" component={Setting} />
