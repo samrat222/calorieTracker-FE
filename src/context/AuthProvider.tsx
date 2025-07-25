@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
-import messaging from "@react-native-firebase/messaging";
-import DeviceInfo from "react-native-device-info";
+import {
+  cleanupNotifications,
+  initializeNotifications,
+} from "@utils/notificationService";
 
 interface AuthContextType {
-  token: string | null;
+  token: string;
   storeToken: (token: string) => Promise<void>;
   clearToken: () => Promise<void>;
   loading: boolean;
@@ -16,39 +16,10 @@ interface AuthContextType {
   setProfile: React.Dispatch<React.SetStateAction<undefined>>;
 }
 
-const requestPermission = async () => {
-  const { status } = await Notifications.getPermissionsAsync();
-  if (status !== "granted") {
-    const { status: newStatus } = await Notifications.requestPermissionsAsync();
-    if (newStatus !== "granted") {
-      alert("Permission to show notifications denied!");
-    }
-  }
-};
-
-const setupNotificationChannel = async () => {
-  if (Platform.OS === "android" || Platform.OS === "ios") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-};
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setToken] = useState<string | null>("sfs");
+  const [token, setToken] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -86,50 +57,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initialize = async () => {
       try {
-        const id = await DeviceInfo.getUniqueId();
-        setDeviceId(id);
-        console.log("Device ID:", id);
+        const result = await initializeNotifications();
 
-        await requestPermission();
-        await setupNotificationChannel();
-        const fcm = await messaging().getAPNSToken();
-        console.log("APN FCM Token:", fcm);
-        messaging()
-          .getAPNSToken()
-          .then(async (apnsToken) => {
-            const token = await messaging().getToken();
-            setFcmToken(token);
-            console.log("FCM Token:", token);
-          });
+        if (result.deviceInfo) {
+          setDeviceId(result.deviceInfo.deviceId);
+          setFcmToken(result.deviceInfo.fcmToken);
+        }
+
         await retrieveToken();
-        setLoading(false);
       } catch (error) {
-        console.log("Error during initialization:", error);
+        console.error("Error during initialization:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     initialize();
 
-    // Handle foreground messages and show notifications
-    const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
-      console.log("A new FCM message arrived!", remoteMessage);
-
-      const { title, body } = remoteMessage.notification || {
-        title: remoteMessage.data.title || "New Notification",
-        body: remoteMessage.data.body || "You have a new message!",
-      };
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: title,
-          body: body,
-        },
-        trigger: null,
-      });
-    });
-
     return () => {
-      unsubscribe();
+      cleanupNotifications();
     };
   }, []);
 

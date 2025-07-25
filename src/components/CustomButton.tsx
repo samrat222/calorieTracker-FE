@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   StyleProp,
   Text,
   TextStyle,
@@ -60,27 +61,33 @@ const CustomButton: FC<CustomButtonProps> = ({
       ]}
       {...rest}
     >
-      {icon && (
-        <MaterialCommunityIcons
-          style={{ top: 1 }}
-          name={icon}
-          color={iconColor}
-          size={iconSize}
-        />
+      {loading ? (
+        <ActivityIndicator size={24} color="#fff" />
+      ) : (
+        <>
+          {icon && (
+            <MaterialCommunityIcons
+              style={{ top: 1 }}
+              name={icon}
+              color={iconColor}
+              size={iconSize}
+            />
+          )}
+          <Text
+            style={[
+              {
+                fontFamily: getFontName("SemiBold"),
+                fontSize: RFValue(textSize || 14),
+                color: textColor || "#fff",
+                margin: 0,
+              },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+        </>
       )}
-      <Text
-        style={[
-          {
-            fontFamily: getFontName("SemiBold"),
-            fontSize: RFValue(textSize || 14),
-            color: textColor || "#fff",
-            margin: 0,
-          },
-          textStyle,
-        ]}
-      >
-        {title}
-      </Text>
     </TouchableOpacity>
   );
 };

@@ -1,22 +1,28 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Dashboard from "@screens/in-app/Dashboard";
-import Profile from "@screens/in-app/Profile";
-import Setting from "@screens/in-app/Setting";
+import Dashboard from "@screens/in-app/bottom-tabs/Dashboard";
+import Profile from "@screens/in-app/bottom-tabs/Profile";
+import Setting from "@screens/in-app/bottom-tabs/Setting";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useUI } from "@context/UiProvider";
 import { TouchableOpacity } from "react-native";
-import { Moon, Sun } from "lucide-react-native";
+import { getFontName } from "@utils/utils";
+
+export type BottomStackParamList = {
+  DASHBOARD: undefined;
+  SETTING: undefined;
+  PROFILE: undefined;
+};
 
 const BottomTabs = createBottomTabNavigator<BottomStackParamList>();
 
 const getBottomTabsIcon = (
   routeName: keyof BottomStackParamList,
   color: string,
-  size: number
+  size: number,
 ) => {
   switch (routeName) {
-    case "HOME":
+    case "DASHBOARD":
       return <MaterialCommunityIcons name="home" size={size} color={color} />;
     case "PROFILE":
       return (
@@ -33,31 +39,25 @@ const BottomTabsNavigator = () => {
   const { theme, toggleTheme, appTheme } = useUI();
   return (
     <BottomTabs.Navigator
-      initialRouteName="HOME"
+      initialRouteName="DASHBOARD"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) =>
           getBottomTabsIcon(route.name, color, size),
         tabBarActiveTintColor: theme.text.primary,
         tabBarInactiveTintColor: theme.descriptionTextColor,
         animation: "shift",
-        headerStyle:{backgroundColor:theme.background},
-        headerTitleStyle:{color:theme.text.primary},
-        tabBarStyle:{
-          backgroundColor:theme.background,
+        headerStyle: { backgroundColor: theme.background },
+        headerTitleStyle: { color: theme.text.primary },
+        tabBarStyle: {
+          backgroundColor: theme.background,
         },
-        headerRight: () => (
-          <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 15 }}>
-            {appTheme === "light" ? (
-              <Moon size={24} color="#000" />
-            ) : (
-              <Sun size={24} color="#fff" />
-            )}
-          </TouchableOpacity>
-        ),
-        headerShown:false
+        tabBarLabelStyle: {
+          fontFamily: getFontName("SemiBold"),
+        },
+        headerShown: false,
       })}
     >
-      <BottomTabs.Screen name="HOME" component={Dashboard} />
+      <BottomTabs.Screen name="DASHBOARD" component={Dashboard} />
       <BottomTabs.Screen name="PROFILE" component={Profile} />
       <BottomTabs.Screen name="SETTING" component={Setting} />
     </BottomTabs.Navigator>

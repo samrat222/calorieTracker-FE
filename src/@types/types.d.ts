@@ -1,17 +1,3 @@
-type RootStackParamList = {
-  LOGIN: undefined;
-  REGISTER: { userId: string };
-  PROFILE: undefined;
-  SETTING: undefined;
-  DASHBOARD: BottomStackParamList;
-};
-
-type BottomStackParamList = {
-  HOME: undefined;
-  SETTING: undefined;
-  PROFILE: undefined;
-};
-
 type DrawerStackParamList = {
   DrawerScreen1: undefined;
   DrawerScreen2: undefined;
@@ -36,4 +22,3 @@ interface ToastMessageProps {
   onClose?: any;
   canClose?: boolean;
 }
-

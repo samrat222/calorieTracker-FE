@@ -3,11 +3,10 @@ import React, { FC } from "react";
 import CustomButton from "@components/CustomButton";
 import { useAuth } from "@context/AuthProvider";
 import { useUI } from "@context/UiProvider";
-import switchTheme from "react-native-theme-switch-animation";
+import CustomText from "@components/CustomText";
 
 const Setting: FC = () => {
-  const { clearToken } = useAuth();
-  const { theme, toggleTheme, setAppTheme, appTheme } = useUI();
+  const { theme } = useUI();
 
   return (
     <View
@@ -19,9 +18,7 @@ const Setting: FC = () => {
         padding: 16,
       }}
     >
-      <CustomButton title="Logout" onPress={clearToken} />
-
-      <CustomButton title="Switch Theme" onPress={toggleTheme} />
+      <CustomText>Settings</CustomText>
     </View>
   );
 };

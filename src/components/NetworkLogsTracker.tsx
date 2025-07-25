@@ -1,20 +1,32 @@
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from "react-native";
-import React, { FC } from "react";
+import { View, TouchableOpacity, StyleSheet, BackHandler } from "react-native";
+import React, { FC, useEffect } from "react";
 import { useNetwork } from "@context/NetworkProvider";
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@gorhom/bottom-sheet";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import NetworkLogger from "react-native-network-logger";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
 const NetworkLogs: FC = () => {
   const { showNetworkLogs, setShowNetworkLogs } = useNetwork();
+  const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+    if (showNetworkLogs) {
+      setShowNetworkLogs(false);
+      return true;
+    }
+    return false;
+  });
+  useEffect(() => {
+    return () => {
+      backHandler.remove();
+    };
+  }, [backHandler]);
   return (
-    <Modal
-      visible={showNetworkLogs}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setShowNetworkLogs(false)}
-    >
-      <View style={styles.modalContainer}>
+    showNetworkLogs && (
+      <Animated.View
+        style={styles.modalContainer}
+        entering={FadeInDown}
+        exiting={FadeOutUp}
+      >
         <TouchableOpacity
           style={styles.closeButton}
           onPress={() => setShowNetworkLogs(false)}
@@ -24,8 +36,8 @@ const NetworkLogs: FC = () => {
         <View style={styles.networkLoggerContainer}>
           <NetworkLogger />
         </View>
-      </View>
-    </Modal>
+      </Animated.View>
+    )
   );
 };
 
@@ -76,6 +88,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 16,
+    marginTop: 16,
   },
   networkLoggerContainer: {
     flex: 1,
@@ -83,6 +96,7 @@ const styles = StyleSheet.create({
     padding: 16,
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT / 2,
+    paddingBottom: 70,
     borderRadius: 8,
     overflow: "hidden",
   },

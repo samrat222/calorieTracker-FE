@@ -5,6 +5,7 @@ import {
   TextInputProps,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 import React, { FC, useState } from "react";
 
@@ -18,6 +19,7 @@ interface InputTextFieldProps extends TextInputProps {
   placeholder?: string;
   value: React.ComponentState;
   onChangeText: (text: string) => void;
+  inputContainerStyle?: ViewStyle;
   required?: boolean;
   label: string;
   secureEntry?: boolean;
@@ -36,6 +38,7 @@ const CustomInputTextField: FC<InputTextFieldProps> = ({
   borderWidth,
   label,
   disableColor,
+  inputContainerStyle,
   secureEntry,
   placeholder,
   required,
@@ -73,8 +76,8 @@ const CustomInputTextField: FC<InputTextFieldProps> = ({
       borderColor: errorMessage
         ? "red"
         : isFocused
-        ? theme.primary
-        : borderColor || theme.inputTextFieldBorderColor,
+          ? theme.primary
+          : borderColor || theme.inputTextFieldBorderColor,
       borderRadius: 5,
       height: 48,
       paddingHorizontal: 16,
@@ -103,7 +106,12 @@ const CustomInputTextField: FC<InputTextFieldProps> = ({
           </Text>
         </View>
       </View>
-      <View style={[Styles.InputContainer, { backgroundColor: disableColor }]}>
+      <View
+        style={[
+          Styles.InputContainer,
+          { backgroundColor: disableColor, ...inputContainerStyle },
+        ]}
+      >
         <TextInput
           style={Styles.Input}
           autoCapitalize="none"

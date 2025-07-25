@@ -1,5 +1,4 @@
 import React, { createContext, ReactNode, useContext, useState } from "react";
-import { useUI } from "./UiProvider";
 
 type NetworkContextType = {
   showNetworkLogs: boolean;
@@ -10,7 +9,6 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 
 export const NetworkProvider = ({ children }: { children: ReactNode }) => {
   const [showNetworkLogs, setShowNetworkLogs] = useState<boolean>(false);
-
 
   return (
     <NetworkContext.Provider value={{ showNetworkLogs, setShowNetworkLogs }}>
