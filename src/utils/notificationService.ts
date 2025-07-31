@@ -156,8 +156,13 @@ const handleNotificationResponse = (
   try {
     prettier("Notification tapped:", response);
 
-    const data = response.notification.request.content.data;
-    handleNotificationNavigation(data);
+    const data =
+      Object.keys(response.notification.request.content.data).length > 0
+        ? response.notification.request.content.data
+        : null;
+    if (data) {
+      handleNotificationNavigation(data);
+    }
   } catch (error) {
     console.error("Error handling notification response:", error);
   }
