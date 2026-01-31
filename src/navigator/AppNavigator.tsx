@@ -3,78 +3,96 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "@screens/no-auth/Login";
 import { NavigationContainer } from "@react-navigation/native";
 import Register from "@screens/no-auth/Register";
+import Onboarding from "@screens/no-auth/Onboarding";
 import { useAuth } from "@context/AuthProvider";
 import { getFontName, navigationRef } from "@utils/utils";
 import NetworkLogsTracker from "@components/NetworkLogsTracker";
 import { BUILD_FOR_PRODUCTION } from "src/constants/constants";
-import DrawerNavigator from "./DrawerNavigator";
+import BottomTabsNavigator, {
+  BottomStackParamList,
+} from "./BottomTabsNavigator";
 import SplashScreen from "@components/SplashScreen";
-import {
-  handleNotificationNavigation,
-  messaging,
-} from "@utils/notificationService";
 import Notification from "@screens/in-app/general/Notification";
-import { BottomStackParamList } from "./BottomTabsNavigator";
+import AddMeal from "@screens/in-app/general/AddMeal";
+import MealHistory from "@screens/in-app/general/MealHistory";
+import MealDetail from "@screens/in-app/general/MealDetail";
+import { useUI } from "@context/UiProvider";
 
 export type RootStackParamList = {
   LOGIN: undefined;
   REGISTER: undefined;
+  ONBOARDING: undefined;
   PROFILE: undefined;
   SETTING: undefined;
-  DASHBOARD: BottomStackParamList;
+  MAIN_TABS: BottomStackParamList;
   NOTIFICATION: undefined;
+  ADD_MEAL: { mealType?: string } | undefined;
+  MEAL_HISTORY: undefined;
+  MEAL_DETAIL: { mealId: string };
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
-  const { token, loading } = useAuth();
+  const { token, loading, isOnboarded } = useAuth();
+  const { theme } = useUI();
 
   if (loading) {
     return <SplashScreen />;
   }
 
-  const onReady = async () => {
-    try {
-      const initialNotification = await messaging.getInitialNotification();
-      if (initialNotification) {
-        console.log(
-          "opening notification from killed state:",
-          initialNotification,
-        );
-        handleNotificationNavigation(initialNotification.data);
-      }
-    } catch (error) {
-      console.log("Error handling initial notification:", error);
-    }
-  };
-
   return (
     <>
-      <NavigationContainer ref={navigationRef} onReady={onReady}>
+      <NavigationContainer ref={navigationRef}>
         <RootStack.Navigator
           screenOptions={{
             animation: "slide_from_right",
+            headerStyle: { backgroundColor: theme.background },
+            headerTintColor: theme.text.primary,
+            headerTitleStyle: {
+              fontFamily: getFontName("SemiBold"),
+              color: theme.text.primary,
+            },
           }}
         >
           {token ? (
-            <RootStack.Group
-              screenOptions={{
-                headerTitleStyle: { fontFamily: getFontName("SemiBold") },
-              }}
-            >
-              <RootStack.Screen
-                name="DASHBOARD"
-                component={DrawerNavigator}
-                options={{ headerShown: false }}
-              />
-              <RootStack.Screen
-                name="NOTIFICATION"
-                component={Notification}
-                options={{ headerTitle: "Notification" }}
-              />
-            </RootStack.Group>
+            isOnboarded ? (
+              // Authenticated and onboarded - show main app
+              <RootStack.Group>
+                <RootStack.Screen
+                  name="MAIN_TABS"
+                  component={BottomTabsNavigator}
+                  options={{ headerShown: false }}
+                />
+                <RootStack.Screen
+                  name="NOTIFICATION"
+                  component={Notification}
+                  options={{ headerTitle: "Notification" }}
+                />
+                <RootStack.Screen
+                  name="ADD_MEAL"
+                  component={AddMeal}
+                  options={{ headerTitle: "Add Meal" }}
+                />
+                <RootStack.Screen
+                  name="MEAL_HISTORY"
+                  component={MealHistory}
+                  options={{ headerTitle: "Meal History" }}
+                />
+                <RootStack.Screen
+                  name="MEAL_DETAIL"
+                  component={MealDetail}
+                  options={{ headerTitle: "Meal Details" }}
+                />
+              </RootStack.Group>
+            ) : (
+              // Authenticated but not onboarded - show onboarding
+              <RootStack.Group screenOptions={{ headerShown: false }}>
+                <RootStack.Screen name="ONBOARDING" component={Onboarding} />
+              </RootStack.Group>
+            )
           ) : (
+            // Not authenticated - show auth screens
             <RootStack.Group screenOptions={{ headerShown: false }}>
               <RootStack.Screen name="LOGIN" component={Login} />
               <RootStack.Screen name="REGISTER" component={Register} />

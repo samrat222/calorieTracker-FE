@@ -1,16 +1,22 @@
+/**
+ * BottomTabsNavigator
+ * Swiggy-styled bottom navigation with clean white design
+ */
+
 import React from "react";
+import { Platform, StyleSheet, Pressable } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Dashboard from "@screens/in-app/bottom-tabs/Dashboard";
 import Profile from "@screens/in-app/bottom-tabs/Profile";
-import Setting from "@screens/in-app/bottom-tabs/Setting";
+import Analytics from "@screens/in-app/bottom-tabs/Analytics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useUI } from "@context/UiProvider";
-import { TouchableOpacity } from "react-native";
 import { getFontName } from "@utils/utils";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type BottomStackParamList = {
   DASHBOARD: undefined;
-  SETTING: undefined;
+  ANALYTICS: undefined;
   PROFILE: undefined;
 };
 
@@ -18,50 +24,119 @@ const BottomTabs = createBottomTabNavigator<BottomStackParamList>();
 
 const getBottomTabsIcon = (
   routeName: keyof BottomStackParamList,
+  focused: boolean,
   color: string,
-  size: number,
 ) => {
+  const size = focused ? 26 : 24;
+
   switch (routeName) {
     case "DASHBOARD":
-      return <MaterialCommunityIcons name="home" size={size} color={color} />;
+      return (
+        <MaterialCommunityIcons
+          name={focused ? "home" : "home-outline"}
+          size={size}
+          color={color}
+        />
+      );
+    case "ANALYTICS":
+      return (
+        <MaterialCommunityIcons
+          name={focused ? "chart-line-variant" : "chart-line"}
+          size={size}
+          color={color}
+        />
+      );
     case "PROFILE":
       return (
-        <MaterialCommunityIcons name="account" size={size} color={color} />
+        <MaterialCommunityIcons
+          name={focused ? "account" : "account-outline"}
+          size={size}
+          color={color}
+        />
       );
-    case "SETTING":
-      return <MaterialCommunityIcons name="cog" size={size} color={color} />;
     default:
-      return <MaterialCommunityIcons name="home" size={size} color={color} />;
+      return (
+        <MaterialCommunityIcons name="home-outline" size={size} color={color} />
+      );
   }
 };
 
 const BottomTabsNavigator = () => {
-  const { theme, toggleTheme, appTheme } = useUI();
+  const { theme } = useUI();
+
   return (
-    <BottomTabs.Navigator
-      initialRouteName="DASHBOARD"
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) =>
-          getBottomTabsIcon(route.name, color, size),
-        tabBarActiveTintColor: theme.text.primary,
-        tabBarInactiveTintColor: theme.descriptionTextColor,
-        animation: "shift",
-        headerStyle: { backgroundColor: theme.background },
-        headerTitleStyle: { color: theme.text.primary },
-        tabBarStyle: {
-          backgroundColor: theme.background,
-        },
-        tabBarLabelStyle: {
-          fontFamily: getFontName("SemiBold"),
-        },
-        headerShown: false,
-      })}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      edges={["top"]}
     >
-      <BottomTabs.Screen name="DASHBOARD" component={Dashboard} />
-      <BottomTabs.Screen name="PROFILE" component={Profile} />
-      <BottomTabs.Screen name="SETTING" component={Setting} />
-    </BottomTabs.Navigator>
+      <BottomTabs.Navigator
+        initialRouteName="DASHBOARD"
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color }) =>
+            getBottomTabsIcon(route.name, focused, color),
+          tabBarActiveTintColor: theme.primary,
+          tabBarInactiveTintColor: theme.inactiveIcon,
+          animation: "none", // Disable to prevent overlap with screen animations
+          headerStyle: { backgroundColor: theme.headerBackground },
+          headerTitleStyle: {
+            color: theme.headerTextColor,
+            fontFamily: getFontName("Bold"),
+            fontSize: 18,
+          },
+          tabBarStyle: {
+            backgroundColor: theme.tabBarBackground,
+            borderTopColor: theme.border,
+            borderTopWidth: 0.5,
+            paddingTop: 6,
+            paddingBottom: Platform.OS === "ios" ? 24 : 10,
+            height: Platform.OS === "ios" ? 84 : 60,
+            elevation: 0, // Remove Android elevation
+          },
+          tabBarLabelStyle: {
+            fontFamily: getFontName("Medium"),
+            fontSize: 10,
+            marginTop: 2,
+          },
+          tabBarItemStyle: {
+            paddingVertical: 2,
+          },
+          tabBarHideOnKeyboard: true,
+          tabBarButton: ({ style, children, onPress }) => (
+            <Pressable
+              style={style}
+              onPress={onPress}
+              android_ripple={{ color: "transparent", borderless: true }}
+            >
+              {children}
+            </Pressable>
+          ),
+          headerShown: false,
+        })}
+      >
+        <BottomTabs.Screen
+          name="DASHBOARD"
+          component={Dashboard}
+          options={{ tabBarLabel: "Home" }}
+        />
+        <BottomTabs.Screen
+          name="ANALYTICS"
+          component={Analytics}
+          options={{ tabBarLabel: "Analytics" }}
+        />
+        <BottomTabs.Screen
+          name="PROFILE"
+          component={Profile}
+          options={{ tabBarLabel: "Profile" }}
+        />
+      </BottomTabs.Navigator>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default BottomTabsNavigator;

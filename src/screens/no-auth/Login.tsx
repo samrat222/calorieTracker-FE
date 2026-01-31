@@ -1,161 +1,222 @@
+/**
+ * Login Screen
+ * Swiggy-styled authentication with animations
+ */
+
 import React, { FC, useState } from "react";
 import {
   View,
-  TextInput,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ImageBackground,
   Keyboard,
-  TouchableOpacity,
+  Pressable,
+  ScrollView,
+  Image,
 } from "react-native";
-import { getFontName, getNavigation } from "@utils/utils";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useAuth } from "@context/AuthProvider";
 import CustomButton from "@components/CustomButton";
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@gorhom/bottom-sheet";
 import CustomText from "@components/CustomText";
-import { useFetch } from "src/hooks/useFetch";
 import { useUI } from "@context/UiProvider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "@navigator/AppNavigator";
+import { RFValue } from "react-native-responsive-fontsize";
+import CustomInputTextField from "@components/CustomInputTextField";
+import authApi from "src/services/authApi";
+import { RADIUS, SHADOWS } from "@utils/colors";
 
 const Login: FC = () => {
-  const { storeToken, deviceId, fcmToken } = useAuth();
+  const { storeToken, setProfile } = useAuth();
   const navigation = useNavigation<any>();
-  const { fetchData } = useFetch({ autoFetch: false });
-  const [email, setEmail] = useState("harya72@gmail.com");
-  const [password, setPassword] = useState("Welcome01#");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { showToast, theme } = useUI();
-  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
 
-  const sendFcmToBackend = async (token: string) => {
-    try {
-      const response: any = await fetchData(
-        `/notification/token`,
-        "POST",
-        {
-          deviceType: Platform.OS,
-          token: fcmToken,
-          deviceId: deviceId,
-        },
-        false,
-        token,
-      );
+  const validate = () => {
+    const newErrors: { email?: string; password?: string } = {};
 
-      if (response?.result?.responseCode === 200) {
-        console.log("FCM token sent successfully:", response);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error("Error sending FCM token:", error);
-      return false;
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Invalid email format";
     }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleLogin = async () => {
     Keyboard.dismiss();
-    // Uncomment the following lines to enable actual login
 
-    // setLoading(true);
-    // try {
-    //   const response: any = await fetchData(`/login`, "POST", {
-    //     username: email,
-    //     password,
-    //     platformId: Platform.OS === "android" ? 1 : 2,
-    //     installedAt: "",
-    //   });
+    if (!validate()) return;
 
-    //   console.log("Login response:", response);
-    //   if (response?.accessToken) {
-    //     if (response.accessToken && fcmToken) {
-    //       const fcmSent = await sendFcmToBackend(response.accessToken);
-    //       if (!fcmSent) {
-    //         showToast({
-    //           message: "Failed to send FCM token to server",
-    //           success: false,
-    //           title: "Error",
-    //         });
-    //       } else {
-    //         storeToken(response.accessToken);
-    //       }
-    //     }
-    //   } else {
-    //     showToast({
-    //       message: "Invalid credentials",
-    //       success: false,
-    //       title: "Login Failed",
-    //     });
-    //   }
-    // } catch (err) {
-    //   console.error("Login error:", err);
-    //   showToast({
-    //     message: "Something went wrong",
-    //     success: false,
-    //     title: "Error",
-    //   });
-    // } finally {
-    //   setLoading(false);
-    // }
-    storeToken("dummy-token"); // For testing purposes only
+    setLoading(true);
+    try {
+      const response = await authApi.login({
+        email: email.toLowerCase().trim(),
+        password,
+      });
+
+      if (response.success && response.data.token) {
+        setProfile(response.data.user);
+        await storeToken(response.data.token);
+
+        showToast({
+          message: "Welcome back!",
+          success: true,
+          title: "Login Successful",
+          visible: true,
+          duration: 3000,
+        });
+      }
+    } catch (error: any) {
+      showToast({
+        message: error.message || "Invalid credentials",
+        success: false,
+        title: "Login Failed",
+        visible: true,
+        duration: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomText font="SemiBold" style={styles.header}>
-        Login to your Account
-      </CustomText>
-
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        placeholderTextColor="#888"
-        style={styles.input}
-      />
-
-      <View style={{ flexDirection: "row" }}>
-        <TextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          placeholderTextColor="#888"
-          style={styles.input}
-        />
-        <TouchableOpacity
-          style={{ padding: 10, position: "absolute", right: 0, top: 0 }}
-          onPress={() => setShowPassword(!showPassword)}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo & Branding */}
+        <Animated.View
+          style={styles.brandingContainer}
+          entering={FadeInUp.delay(100).springify()}
         >
-          <MaterialCommunityIcons
-            name={showPassword ? "eye-off" : "eye"}
-            size={24}
-            color={theme.primary}
-          />
-        </TouchableOpacity>
-      </View>
+          <View
+            style={[styles.logoCircle, { backgroundColor: theme.primaryLight }]}
+          >
+            <MaterialCommunityIcons
+              name="food-apple"
+              size={48}
+              color={theme.primary}
+            />
+          </View>
+          <CustomText
+            font="Bold"
+            style={[styles.appName, { color: theme.primary }]}
+          >
+            CalorieTracker
+          </CustomText>
+          <CustomText
+            font="Regular"
+            style={[styles.tagline, { color: theme.text.secondary }]}
+          >
+            Track your nutrition journey
+          </CustomText>
+        </Animated.View>
 
-      <CustomButton
-        title={loading ? "Logging in..." : "Login"}
-        onPress={handleLogin}
-        loading={loading}
-        style={[styles.button]}
-      />
-      <View style={{ height: 12 }} />
+        {/* Login Card */}
+        <Animated.View
+          style={[
+            styles.card,
+            { backgroundColor: theme.cardBackground },
+            SHADOWS.medium,
+          ]}
+          entering={FadeInDown.delay(200).springify()}
+        >
+          <CustomText
+            font="Bold"
+            style={[styles.welcomeText, { color: theme.text.primary }]}
+          >
+            Welcome Back
+          </CustomText>
+          <CustomText
+            font="Regular"
+            style={[styles.welcomeSubtext, { color: theme.text.secondary }]}
+          >
+            Sign in to continue tracking
+          </CustomText>
 
-      <CustomButton
-        onPress={() => navigation.navigate("REGISTER")}
-        title="Go to Register"
-        style={[styles.button, { backgroundColor: "#4f46e5" }]}
-      />
+          <View style={styles.formContainer}>
+            <CustomInputTextField
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({ ...errors, email: undefined });
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              errorMessage={errors.email}
+              leftIcon="email-outline"
+            />
+
+            <View style={{ height: 16 }} />
+
+            <CustomInputTextField
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password)
+                  setErrors({ ...errors, password: undefined });
+              }}
+              secureEntry
+              errorMessage={errors.password}
+              leftIcon="lock-outline"
+            />
+
+            <View style={{ height: 24 }} />
+
+            <CustomButton
+              title="Login"
+              onPress={handleLogin}
+              loading={loading}
+              icon="login"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Sign Up Link */}
+        <Animated.View
+          style={styles.signUpContainer}
+          entering={FadeInDown.delay(300).springify()}
+        >
+          <Pressable
+            onPress={() => navigation.navigate("REGISTER")}
+            style={styles.signUpButton}
+          >
+            <CustomText
+              font="Regular"
+              style={[styles.signUpText, { color: theme.text.secondary }]}
+            >
+              Don't have an account?{" "}
+            </CustomText>
+            <CustomText
+              font="SemiBold"
+              style={[styles.signUpLink, { color: theme.primary }]}
+            >
+              Sign Up
+            </CustomText>
+          </Pressable>
+        </Animated.View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -165,27 +226,59 @@ export default Login;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#111",
+    padding: 24,
   },
-  header: {
-    fontSize: 24,
-    marginBottom: 30,
-    color: "#fff",
+  brandingContainer: {
+    alignItems: "center",
+    marginBottom: 32,
   },
-  button: {
-    marginTop: 20,
-    paddingVertical: 14,
-  },
-  input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    width: "100%",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 14,
+  logoCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
-    fontFamily: getFontName("Regular"),
+  },
+  appName: {
+    fontSize: RFValue(26),
+    marginBottom: 4,
+  },
+  tagline: {
+    fontSize: RFValue(13),
+  },
+  card: {
+    borderRadius: RADIUS.xl,
+    padding: 24,
+    marginBottom: 24,
+  },
+  welcomeText: {
+    fontSize: RFValue(22),
+    marginBottom: 4,
+  },
+  welcomeSubtext: {
+    fontSize: RFValue(13),
+    marginBottom: 24,
+  },
+  formContainer: {
+    width: "100%",
+  },
+  signUpContainer: {
+    alignItems: "center",
+  },
+  signUpButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+  },
+  signUpText: {
+    fontSize: RFValue(13),
+  },
+  signUpLink: {
+    fontSize: RFValue(13),
   },
 });

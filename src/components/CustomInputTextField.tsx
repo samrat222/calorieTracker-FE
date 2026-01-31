@@ -1,6 +1,10 @@
+/**
+ * CustomInputTextField Component
+ * Swiggy-styled input with focus animations
+ */
+
 import {
   StyleSheet,
-  Text,
   TextInput,
   TextInputProps,
   TouchableOpacity,
@@ -8,12 +12,19 @@ import {
   ViewStyle,
 } from "react-native";
 import React, { FC, useState } from "react";
-
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
 import { RFValue } from "react-native-responsive-fontsize";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useUI } from "@context/UiProvider";
 import { getFontName } from "@utils/utils";
+import { RADIUS, SHADOWS } from "@utils/colors";
 import ErrorMessage from "./ErrorMessage";
+import CustomText from "./CustomText";
 
 interface InputTextFieldProps extends TextInputProps {
   placeholder?: string;
@@ -21,7 +32,7 @@ interface InputTextFieldProps extends TextInputProps {
   onChangeText: (text: string) => void;
   inputContainerStyle?: ViewStyle;
   required?: boolean;
-  label: string;
+  label?: string;
   secureEntry?: boolean;
   disableColor?: string;
   labelColor?: string;
@@ -29,7 +40,10 @@ interface InputTextFieldProps extends TextInputProps {
   borderColor?: string;
   borderWidth?: number | undefined;
   errorMessage?: string;
+  leftIcon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 }
+
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 const CustomInputTextField: FC<InputTextFieldProps> = ({
   labelColor,
@@ -45,101 +59,157 @@ const CustomInputTextField: FC<InputTextFieldProps> = ({
   value,
   errorMessage,
   onChangeText,
+  leftIcon,
   ...rest
 }) => {
   const { theme } = useUI();
   const [isPasswordSecure, setIsPasswordSecure] = useState(secureEntry);
   const [isFocused, setIsFocused] = useState(false);
 
-  const Styles = StyleSheet.create({
-    Row: {
-      padding: 0,
-      gap: 8,
-    },
-    LabelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    LabelRowLeft: {
-      marginRight: 4,
-    },
-    Label: {
-      color: labelColor || theme.text.primary,
-      fontFamily: getFontName("Regular"),
-      fontSize: RFValue(14),
-      lineHeight: 22,
-    },
-    InputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderWidth: borderWidth || 1,
-      borderColor: errorMessage
-        ? "red"
-        : isFocused
-          ? theme.primary
-          : borderColor || theme.inputTextFieldBorderColor,
-      borderRadius: 5,
-      height: 48,
-      paddingHorizontal: 16,
-      color: theme.text.secondary,
-    },
-    Input: {
-      flex: 1,
-      color: inputColor || theme.inputTextColor,
-      fontFamily: getFontName("Regular"),
-      fontSize: RFValue(12),
-    },
-    IconContainer: {
-      marginLeft: 10,
-    },
+  // Animation for focus state
+  const focusAnimation = useSharedValue(0);
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    focusAnimation.value = withTiming(1, { duration: 200 });
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    focusAnimation.value = withTiming(0, { duration: 200 });
+  };
+
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    const borderColorAnimated = interpolateColor(
+      focusAnimation.value,
+      [0, 1],
+      [theme.inputBorder, theme.primary],
+    );
+
+    return {
+      borderColor: errorMessage ? theme.error : borderColorAnimated,
+    };
   });
 
+  const getBorderColor = () => {
+    if (errorMessage) return theme.error;
+    if (isFocused) return theme.primary;
+    return borderColor || theme.inputBorder;
+  };
+
   return (
-    <View style={Styles.Row}>
-      <View style={Styles.LabelRow}>
-        <View style={Styles.LabelRowLeft}>
-          <Text style={Styles.Label}>{label}</Text>
+    <View style={styles.container}>
+      {label && (
+        <View style={styles.labelRow}>
+          <CustomText
+            font="Medium"
+            style={[styles.label, { color: labelColor || theme.text.primary }]}
+          >
+            {label}
+          </CustomText>
+          {required && (
+            <CustomText
+              font="Medium"
+              style={[styles.label, { color: theme.error, marginLeft: 4 }]}
+            >
+              *
+            </CustomText>
+          )}
         </View>
-        <View>
-          <Text style={{ ...Styles.Label, color: theme.red }}>
-            {required ? "*" : ""}
-          </Text>
-        </View>
-      </View>
-      <View
+      )}
+
+      <AnimatedView
         style={[
-          Styles.InputContainer,
-          { backgroundColor: disableColor, ...inputContainerStyle },
+          styles.inputContainer,
+          {
+            backgroundColor: disableColor || theme.inputBackground,
+            borderWidth: borderWidth || 1.5,
+            borderColor: getBorderColor(),
+          },
+          isFocused && SHADOWS.small,
+          inputContainerStyle,
+          animatedContainerStyle,
         ]}
       >
+        {leftIcon && (
+          <MaterialCommunityIcons
+            name={leftIcon}
+            size={20}
+            color={isFocused ? theme.primary : theme.text.tertiary}
+            style={styles.leftIcon}
+          />
+        )}
+
         <TextInput
-          style={Styles.Input}
+          style={[
+            styles.input,
+            {
+              color: inputColor || theme.inputTextColor,
+              fontFamily: getFontName("Regular"),
+            },
+          ]}
           autoCapitalize="none"
           secureTextEntry={isPasswordSecure}
           value={value}
           placeholder={placeholder}
           placeholderTextColor={theme.inputPlaceholderColor}
           onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           {...rest}
         />
+
         {secureEntry && (
           <TouchableOpacity
-            style={Styles.IconContainer}
+            style={styles.iconContainer}
             onPress={() => setIsPasswordSecure(!isPasswordSecure)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <MaterialCommunityIcons
-              name={isPasswordSecure ? "eye-off" : "eye"}
-              size={24}
-              color={theme.primary}
+              name={isPasswordSecure ? "eye-off-outline" : "eye-outline"}
+              size={22}
+              color={theme.text.tertiary}
             />
           </TouchableOpacity>
         )}
-      </View>
+      </AnimatedView>
+
       {errorMessage && <ErrorMessage message={errorMessage} />}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 8,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  label: {
+    fontSize: RFValue(13),
+    lineHeight: 20,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: RADIUS.md,
+    height: 52,
+    paddingHorizontal: 16,
+  },
+  input: {
+    flex: 1,
+    fontSize: RFValue(14),
+    height: "100%",
+  },
+  leftIcon: {
+    marginRight: 12,
+  },
+  iconContainer: {
+    marginLeft: 8,
+    padding: 4,
+  },
+});
 
 export default CustomInputTextField;

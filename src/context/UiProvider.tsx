@@ -1,5 +1,5 @@
-import { useColorScheme, ColorSchemeName } from "react-native";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { ColorSchemeName } from "react-native";
+import React, { createContext, useContext, useState } from "react";
 import { THEME } from "../utils/colors";
 import FullscreenLoader from "@components/FullscreenLoader";
 import ToastMessage from "@components/ToastMessage";
@@ -17,8 +17,8 @@ interface UIContextType {
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UiProvider = ({ children }: { children: React.ReactNode }) => {
-  const deviceTheme = useColorScheme();
-  const [appTheme, setAppTheme] = useState<ColorSchemeName>(deviceTheme);
+  // Default to light theme for Swiggy-style UI
+  const [appTheme, setAppTheme] = useState<ColorSchemeName>("light");
   const [fullscreenLoading, setFullscreenLoading] = useState<boolean>(false);
   const theme = THEME[appTheme || "light"];
   const [toast, showToast] = useState<ToastMessageProps>({
@@ -31,10 +31,6 @@ export const UiProvider = ({ children }: { children: React.ReactNode }) => {
     onClose: () => {},
     canClose: false,
   });
-
-  useEffect(() => {
-    setAppTheme(deviceTheme);
-  }, [deviceTheme]);
 
   const toggleTheme = () => {
     setAppTheme(appTheme === "light" ? "dark" : "light");

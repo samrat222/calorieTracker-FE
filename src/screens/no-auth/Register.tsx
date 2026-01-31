@@ -1,60 +1,73 @@
-import React, { useState } from "react";
+/**
+ * Register Screen
+ * Swiggy-styled registration with animations
+ */
+
+import React, { FC, useState } from "react";
 import {
   View,
-  TextInput,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  ImageBackground,
   Keyboard,
-  TouchableOpacity,
+  Pressable,
+  ScrollView,
 } from "react-native";
-import CustomText from "@components/CustomText";
-import CustomButton from "@components/CustomButton";
-import { getFontName, getNavigation } from "@utils/utils";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useAuth } from "@context/AuthProvider";
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@gorhom/bottom-sheet";
+import CustomButton from "@components/CustomButton";
+import CustomText from "@components/CustomText";
 import { useUI } from "@context/UiProvider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { API_BASE_URL, SYSTEM_TOKEN } from "src/constants/constants";
+import { useNavigation } from "@react-navigation/native";
+import { RFValue } from "react-native-responsive-fontsize";
+import CustomInputTextField from "@components/CustomInputTextField";
+import authApi from "src/services/authApi";
+import { RADIUS, SHADOWS } from "@utils/colors";
 
-const Register = () => {
-  const navigation = getNavigation();
-  const { showToast, theme } = useUI();
+const Register: FC = () => {
+  const { storeToken, setProfile } = useAuth();
+  const navigation = useNavigation<any>();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phoneNo: "",
-    password: "",
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+  const { showToast, theme } = useUI();
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: typeof errors = {};
 
-    if (!form.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
+    if (!name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "Invalid email format";
+    }
 
-    if (!form.phoneNo.trim()) newErrors.phoneNo = "Phone number is required";
-    else if (!/^\d{10}$/.test(form.phoneNo))
-      newErrors.phoneNo = "Phone must be 10 digits";
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      newErrors.password =
+        "Password must contain uppercase, lowercase, and number";
+    }
 
-    if (!form.password.trim()) newErrors.password = "Password is required";
-    else if (form.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -62,150 +75,183 @@ const Register = () => {
 
   const handleRegister = async () => {
     Keyboard.dismiss();
-    // if (!validate()) return;
 
-    // Uncomment the following lines to enable actual registration
+    if (!validate()) return;
 
-    // try {
-    //   setLoading(true);
-    //   const response = await fetch(`${API_BASE_URL}/user/register`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       "x-jwt-assertion": SYSTEM_TOKEN,
-    //     },
-    //     body: JSON.stringify({
-    //       ...form,
-    //       roleID: 3,
-    //     }),
-    //   });
+    setLoading(true);
+    try {
+      const response = await authApi.register({
+        email: email.toLowerCase().trim(),
+        password,
+        name: name.trim(),
+      });
 
-    //   const json = await response.json();
+      if (response.success && response.data.token) {
+        setProfile(response.data.user);
+        await storeToken(response.data.token);
 
-    //   if (response.ok) {
-    //     showToast({
-    //       message: "Registration successful. Please login",
-    //       title: "Success",
-    //       success: true,
-    //     });
-    //     console.log("Registration successful:", json);
-    //     setForm({ fullName: "", email: "", phoneNo: "", password: "" });
-    //   } else {
-    //     console.warn("Registration failed:", json);
-    //     if (json.responseCode === 100014) {
-    //       showToast({
-    //         message: "User already exists",
-    //         title: "Failed",
-    //         success: false,
-    //       });
-    //     } else {
-    //       showToast({
-    //         message: "Registration failed",
-    //         title: "Failed",
-    //         success: false,
-    //       });
-    //     }
-    //   }
-    // } catch (err) {
-    //   console.error(err);
-    //   showToast({
-    //     message: "Please try again later",
-    //     title: "Network Error",
-    //     success: false,
-    //   });
-    // } finally {
-    //   setLoading(false);
-    // }
-    showToast({
-      message: "Registration successful. Please login",
-      title: "Success",
-      success: true,
-    });
+        showToast({
+          message: "Account created successfully!",
+          success: true,
+          title: "Welcome!",
+          visible: true,
+          duration: 3000,
+        });
+      }
+    } catch (error: any) {
+      showToast({
+        message: error.message || "Registration failed",
+        success: false,
+        title: "Error",
+        visible: true,
+        duration: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.inner}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <CustomText font="SemiBold" style={styles.header}>
-          Create your Account
-        </CustomText>
-
-        <TextInput
-          placeholder="Full Name"
-          placeholderTextColor="#888"
-          value={form.fullName}
-          onChangeText={(v) => handleChange("fullName", v)}
-          style={styles.input}
-        />
-        {errors.fullName && (
-          <CustomText style={styles.error}>{errors.fullName}</CustomText>
-        )}
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor="#888"
-          value={form.email}
-          onChangeText={(v) => handleChange("email", v)}
-          style={styles.input}
-          keyboardType="email-address"
-        />
-        {errors.email && (
-          <CustomText style={styles.error}>{errors.email}</CustomText>
-        )}
-
-        <TextInput
-          placeholder="Phone Number"
-          placeholderTextColor="#888"
-          value={form.phoneNo}
-          maxLength={10}
-          onChangeText={(v) => handleChange("phoneNo", v)}
-          style={styles.input}
-          keyboardType="number-pad"
-        />
-        {errors.phoneNo && (
-          <CustomText style={styles.error}>{errors.phoneNo}</CustomText>
-        )}
-        <View style={{ flexDirection: "row" }}>
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#888"
-            value={form.password}
-            onChangeText={(v) => handleChange("password", v)}
-            style={[styles.input, { width: "100%" }]}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            style={{ padding: 10, position: "absolute", right: 0, top: 0 }}
-            onPress={() => setShowPassword(!showPassword)}
+        {/* Header */}
+        <Animated.View
+          style={styles.headerContainer}
+          entering={FadeInUp.delay(100).springify()}
+        >
+          <View
+            style={[styles.iconCircle, { backgroundColor: theme.primaryLight }]}
           >
             <MaterialCommunityIcons
-              name={showPassword ? "eye-off" : "eye"}
-              size={24}
+              name="account-plus"
+              size={48}
               color={theme.primary}
             />
-          </TouchableOpacity>
-        </View>
-        {errors.password && (
-          <CustomText style={styles.error}>{errors.password}</CustomText>
-        )}
+          </View>
+          <CustomText
+            font="Bold"
+            style={[styles.title, { color: theme.text.primary }]}
+          >
+            Create Account
+          </CustomText>
+          <CustomText
+            font="Regular"
+            style={[styles.subtitle, { color: theme.text.secondary }]}
+          >
+            Start your health journey today
+          </CustomText>
+        </Animated.View>
 
-        <CustomButton
-          title="Register"
-          onPress={handleRegister}
-          style={[styles.button, { backgroundColor: "#4f46e5" }]}
-          loading={loading}
-        />
+        {/* Form Card */}
+        <Animated.View
+          style={[
+            styles.card,
+            { backgroundColor: theme.cardBackground },
+            SHADOWS.medium,
+          ]}
+          entering={FadeInDown.delay(200).springify()}
+        >
+          <CustomInputTextField
+            label="Full Name"
+            placeholder="Enter your full name"
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
+              if (errors.name) setErrors({ ...errors, name: undefined });
+            }}
+            autoCapitalize="words"
+            errorMessage={errors.name}
+            leftIcon="account-outline"
+          />
 
-        <CustomButton
-          title="Go to Login"
-          onPress={() => navigation.navigate("LOGIN")}
-          style={[{ marginTop: 10 }]}
-        />
+          <View style={{ height: 16 }} />
+
+          <CustomInputTextField
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            errorMessage={errors.email}
+            leftIcon="email-outline"
+          />
+
+          <View style={{ height: 16 }} />
+
+          <CustomInputTextField
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password)
+                setErrors({ ...errors, password: undefined });
+            }}
+            secureEntry
+            errorMessage={errors.password}
+            leftIcon="lock-outline"
+          />
+
+          <View style={{ height: 16 }} />
+
+          <CustomInputTextField
+            label="Confirm Password"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (errors.confirmPassword)
+                setErrors({ ...errors, confirmPassword: undefined });
+            }}
+            secureEntry
+            errorMessage={errors.confirmPassword}
+            leftIcon="lock-check-outline"
+          />
+
+          <View style={{ height: 24 }} />
+
+          <CustomButton
+            title="Create Account"
+            onPress={handleRegister}
+            loading={loading}
+            icon="account-plus"
+          />
+        </Animated.View>
+
+        {/* Login Link */}
+        <Animated.View
+          style={styles.loginContainer}
+          entering={FadeInDown.delay(300).springify()}
+        >
+          <Pressable
+            onPress={() => navigation.navigate("LOGIN")}
+            style={styles.loginButton}
+          >
+            <CustomText
+              font="Regular"
+              style={[styles.loginText, { color: theme.text.secondary }]}
+            >
+              Already have an account?{" "}
+            </CustomText>
+            <CustomText
+              font="SemiBold"
+              style={[styles.loginLink, { color: theme.primary }]}
+            >
+              Login
+            </CustomText>
+          </Pressable>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -216,35 +262,48 @@ export default Register;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111",
   },
-  inner: {
-    padding: 24,
-    justifyContent: "center",
+  scrollContent: {
     flexGrow: 1,
+    justifyContent: "center",
+    padding: 24,
   },
-  header: {
-    fontSize: 24,
-    marginBottom: 30,
-    color: "#fff",
+  headerContainer: {
+    alignItems: "center",
+    marginBottom: 24,
   },
-  input: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: getFontName("Regular"),
-    fontSize: 14,
-    color: "#fff",
-    marginBottom: 10,
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  button: {
-    marginTop: 20,
+  title: {
+    fontSize: RFValue(24),
+    marginBottom: 4,
   },
-  error: {
-    color: "#e2e2e2",
-    fontSize: 12,
-    marginBottom: 6,
-    marginLeft: 4,
+  subtitle: {
+    fontSize: RFValue(13),
+  },
+  card: {
+    borderRadius: RADIUS.xl,
+    padding: 24,
+    marginBottom: 24,
+  },
+  loginContainer: {
+    alignItems: "center",
+  },
+  loginButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+  },
+  loginText: {
+    fontSize: RFValue(13),
+  },
+  loginLink: {
+    fontSize: RFValue(13),
   },
 });

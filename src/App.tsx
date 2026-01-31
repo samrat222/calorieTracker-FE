@@ -7,7 +7,6 @@ import { CustomBottomSheetProvider } from "@context/CustomBottomSheetProvider";
 import { NetworkProvider } from "@context/NetworkProvider";
 import React from "react";
 import { LogBox } from "react-native";
-import UpdateChecker from "@utils/UpdateChecker";
 import {
   useFonts,
   NunitoSans_400Regular,
@@ -17,11 +16,8 @@ import {
   NunitoSans_900Black,
 } from "@expo-google-fonts/nunito-sans";
 import SplashScreen from "@components/SplashScreen";
-import { setupBackgroundMessaging } from "@utils/notificationService";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 LogBox.ignoreAllLogs(true);
-
-// Setting up the background messaging before App.tsx mounts
-setupBackgroundMessaging();
 
 export default function App() {
   let [fontsLoaded] = useFonts({
@@ -36,9 +32,9 @@ export default function App() {
     return <SplashScreen />;
   }
   return (
-    <GestureHandlerRootView>
-      <UiProvider>
-        <UpdateChecker>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <UiProvider>
           <AuthProvider>
             <CustomBottomSheetProvider>
               <NetworkProvider>
@@ -46,9 +42,9 @@ export default function App() {
               </NetworkProvider>
             </CustomBottomSheetProvider>
           </AuthProvider>
-        </UpdateChecker>
-      </UiProvider>
-      <StatusBar style="auto" translucent backgroundColor="transparent" />
-    </GestureHandlerRootView>
+        </UiProvider>
+        <StatusBar style="dark" translucent backgroundColor="transparent" />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
