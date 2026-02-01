@@ -4,7 +4,13 @@
  */
 
 import React, { FC, useCallback, useState } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useAuth } from "@context/AuthProvider";
 import { useUI } from "@context/UiProvider";
@@ -13,7 +19,7 @@ import CustomButton from "@components/CustomButton";
 import ConfirmationModal from "@components/ConfirmationModal";
 import { RFValue } from "react-native-responsive-fontsize";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import userApi from "src/services/userApi";
 import authApi from "src/services/authApi";
 import { RADIUS, SHADOWS } from "@utils/colors";
@@ -108,6 +114,7 @@ const SkeletonProfile = () => {
 const Profile: FC = () => {
   const { token, profile, clearToken, setProfile } = useAuth();
   const { theme, showToast } = useUI();
+  const navigation = useNavigation<any>();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -235,6 +242,16 @@ const Profile: FC = () => {
           <CustomText font="Regular" style={styles.userEmail}>
             {profile?.email}
           </CustomText>
+
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate("EDIT_PROFILE")}
+          >
+            <MaterialCommunityIcons name="pencil" size={16} color="#fff" />
+            <CustomText font="Medium" style={styles.editButtonText}>
+              Edit Profile
+            </CustomText>
+          </TouchableOpacity>
         </Animated.View>
 
         {/* Stats Grid */}
@@ -633,5 +650,19 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 8,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    marginTop: 16,
+    gap: 6,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontSize: RFValue(11),
   },
 });

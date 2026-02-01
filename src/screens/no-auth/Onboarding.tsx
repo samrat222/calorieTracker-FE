@@ -17,6 +17,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { RFValue } from "react-native-responsive-fontsize";
 import CustomInputTextField from "@components/CustomInputTextField";
 import userApi from "src/services/userApi";
+import notificationService from "src/services/notificationService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -143,6 +144,9 @@ const Onboarding: FC = () => {
 
       if (response.success) {
         setProfile(response.data.user);
+
+        // Explicitly trigger greeting after onboarding
+        notificationService.initializeNotifications(token, true);
         showToast({
           message: `Your daily goal is ${response.data.healthMetrics.dailyCalorieGoal} calories`,
           success: true,

@@ -68,6 +68,8 @@ const Dashboard: FC = () => {
   });
   const [goal, setGoal] = useState(profile?.dailyCalorieGoal || 2000);
 
+  console.log("token", token);
+
   // FAB animation
   const fabScale = useSharedValue(1);
   const fabAnimatedStyle = useAnimatedStyle(() => ({

@@ -17,6 +17,7 @@ import AddMeal from "@screens/in-app/general/AddMeal";
 import MealHistory from "@screens/in-app/general/MealHistory";
 import MealDetail from "@screens/in-app/general/MealDetail";
 import { useUI } from "@context/UiProvider";
+import { useNotifications } from "@hooks/useNotifications";
 
 export type RootStackParamList = {
   LOGIN: undefined;
@@ -29,6 +30,7 @@ export type RootStackParamList = {
   ADD_MEAL: { mealType?: string } | undefined;
   MEAL_HISTORY: undefined;
   MEAL_DETAIL: { mealId: string };
+  EDIT_PROFILE: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +38,9 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator = () => {
   const { token, loading, isOnboarded } = useAuth();
   const { theme } = useUI();
+
+  // Initialize notifications
+  useNotifications();
 
   if (loading) {
     return <SplashScreen />;
@@ -83,6 +88,13 @@ const AppNavigator = () => {
                   name="MEAL_DETAIL"
                   component={MealDetail}
                   options={{ headerTitle: "Meal Details" }}
+                />
+                <RootStack.Screen
+                  name="EDIT_PROFILE"
+                  getComponent={() =>
+                    require("@screens/in-app/general/EditProfile").default
+                  }
+                  options={{ headerTitle: "Edit Profile" }}
                 />
               </RootStack.Group>
             ) : (

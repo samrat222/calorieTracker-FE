@@ -8,7 +8,8 @@
       "@context/*": ["src/context/*"],
       "@utils/*": ["src/utils/*"],
       "@assets/*": ["src/assets/*"],
-      "@navigator/*":["src/navigator/*"]
+      "@navigator/*":["src/navigator/*"],
+      "@hooks/*": ["src/hooks/*"]
     },
     "strict": true
   },

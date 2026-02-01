@@ -24,6 +24,7 @@ import { useNavigation } from "@react-navigation/native";
 import { RFValue } from "react-native-responsive-fontsize";
 import CustomInputTextField from "@components/CustomInputTextField";
 import authApi from "src/services/authApi";
+import notificationService from "src/services/notificationService";
 import { RADIUS, SHADOWS } from "@utils/colors";
 
 const Login: FC = () => {
@@ -69,6 +70,9 @@ const Login: FC = () => {
       if (response.success && response.data.token) {
         setProfile(response.data.user);
         await storeToken(response.data.token);
+
+        // Explicitly trigger login greeting
+        notificationService.initializeNotifications(response.data.token, true);
 
         showToast({
           message: "Welcome back!",

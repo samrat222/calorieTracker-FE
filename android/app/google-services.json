@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108788671783",
+    "project_id": "calorie-tracker-f04a6",
+    "storage_bucket": "calorie-tracker-f04a6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108788671783:android:6a708bb062040cdd037502",
+        "android_client_info": {
+          "package_name": "com.mobileapp.base"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT701pmCXGOVAbDF_LiwwlTKDhxeQR9Zo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
