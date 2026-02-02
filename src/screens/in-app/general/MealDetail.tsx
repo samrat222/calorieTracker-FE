@@ -13,7 +13,11 @@ import CustomButton from "@components/CustomButton";
 import ConfirmationModal from "@components/ConfirmationModal";
 import { RFValue } from "react-native-responsive-fontsize";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import mealApi, { Meal } from "src/services/mealApi";
 
 const getMealColor = (mealType: string): string => {
@@ -43,11 +47,7 @@ const MealDetail: FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [meal, setMeal] = useState<Meal | null>(null);
 
-  useEffect(() => {
-    fetchMeal();
-  }, [mealId]);
-
-  const fetchMeal = async () => {
+  const fetchMeal = React.useCallback(async () => {
     if (!token || !mealId) return;
 
     try {
@@ -67,7 +67,13 @@ const MealDetail: FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, mealId]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchMeal();
+    }, [fetchMeal]),
+  );
 
   const handleDelete = () => {
     setShowDeleteModal(true);
@@ -331,14 +337,23 @@ const MealDetail: FC = () => {
           </View>
         )}
 
-        {/* Delete Button */}
-        <CustomButton
-          title="Delete Meal"
-          onPress={handleDelete}
-          variant="outline"
-          icon="delete"
-          style={{ marginTop: 24, marginBottom: 40 }}
-        />
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <CustomButton
+            title="Edit Meal"
+            onPress={() => navigation.navigate("EDIT_MEAL", { mealId })}
+            variant="outline"
+            icon="pencil"
+            style={{ flex: 1 }}
+          />
+          <CustomButton
+            title="Delete Meal"
+            onPress={handleDelete}
+            variant="outline"
+            icon="delete"
+            style={{ flex: 1 }}
+          />
+        </View>
       </ScrollView>
 
       {/* Delete Confirmation Modal */}
@@ -442,5 +457,11 @@ const styles = StyleSheet.create({
   },
   foodItemInfo: {
     flex: 1,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 24,
+    marginBottom: 40,
   },
 });

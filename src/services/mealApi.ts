@@ -294,14 +294,35 @@ const mealApi = {
     token: string,
     id: string,
     payload: Partial<CreateMealPayload>,
+    imageUri?: string,
   ): Promise<{ success: boolean; data: { meal: Meal } }> => {
+    const formData = new FormData();
+
+    if (imageUri) {
+      const imageFile = {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "food.jpg",
+      } as any;
+      formData.append("image", imageFile);
+    }
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (key === "foodItems") {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+
     const response = await fetch(`${API_BASE_URL}/meals/${id}`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     const data = await response.json();

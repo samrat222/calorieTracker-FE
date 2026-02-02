@@ -1,12 +1,6 @@
 import React, { FC, useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useAuth } from "@context/AuthProvider";
 import { useUI } from "@context/UiProvider";
 import CustomText from "@components/CustomText";
@@ -34,6 +28,27 @@ const ACTIVITY_LEVELS = [
   },
 ];
 
+const FITNESS_GOALS = [
+  {
+    value: "lose",
+    label: "Lose Weight",
+    description: "Calorie deficit (-400 kcal)",
+    icon: "trending-down",
+  },
+  {
+    value: "maintain",
+    label: "Maintain",
+    description: "Keep current weight",
+    icon: "scale-bathroom",
+  },
+  {
+    value: "gain",
+    label: "Gain Weight",
+    description: "Calorie surplus (+500 kcal)",
+    icon: "trending-up",
+  },
+];
+
 const EditProfile: FC = () => {
   const { token, profile, setProfile } = useAuth();
   const { theme, showToast } = useUI();
@@ -47,6 +62,7 @@ const EditProfile: FC = () => {
     height: profile?.height?.toString() || "",
     gender: (profile?.gender as "male" | "female") || null,
     activityLevel: profile?.activityLevel || null,
+    goal: (profile?.goal as "lose" | "gain" | "maintain") || "maintain",
   });
 
   const [errors, setErrors] = useState<
@@ -80,6 +96,7 @@ const EditProfile: FC = () => {
         height: parseFloat(data.height),
         gender: data.gender!,
         activityLevel: data.activityLevel!,
+        goal: data.goal as "lose" | "gain" | "maintain",
       };
 
       const response = await userApi.updateProfile(token, payload);
@@ -109,223 +126,290 @@ const EditProfile: FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bottomOffset={20}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.small,
+        ]}
       >
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.cardBackground },
-            SHADOWS.small,
-          ]}
+        <CustomText
+          font="SemiBold"
+          style={[styles.sectionTitle, { color: theme.text.primary }]}
         >
-          <CustomText
-            font="SemiBold"
-            style={[styles.sectionTitle, { color: theme.text.primary }]}
-          >
-            General Information
-          </CustomText>
+          General Information
+        </CustomText>
 
-          <CustomInputTextField
-            label="Name"
-            placeholder="Your name"
-            value={data.name}
-            onChangeText={(text) => setData({ ...data, name: text })}
-            errorMessage={errors.name}
-          />
+        <CustomInputTextField
+          label="Name"
+          placeholder="Your name"
+          value={data.name}
+          onChangeText={(text) => setData({ ...data, name: text })}
+          errorMessage={errors.name}
+        />
 
-          <View style={{ height: 16 }} />
+        <View style={{ height: 16 }} />
 
-          <CustomInputTextField
-            label="Age"
-            placeholder="Your age"
-            value={data.age}
-            onChangeText={(text) =>
-              setData({ ...data, age: text.replace(/[^0-9]/g, "") })
-            }
-            keyboardType="number-pad"
-            errorMessage={errors.age}
-          />
+        <CustomInputTextField
+          label="Age"
+          placeholder="Your age"
+          value={data.age}
+          onChangeText={(text) =>
+            setData({ ...data, age: text.replace(/[^0-9]/g, "") })
+          }
+          keyboardType="number-pad"
+          errorMessage={errors.age}
+        />
+      </View>
+
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.small,
+        ]}
+      >
+        <CustomText
+          font="SemiBold"
+          style={[styles.sectionTitle, { color: theme.text.primary }]}
+        >
+          Metrics
+        </CustomText>
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <CustomInputTextField
+              label="Weight (kg)"
+              placeholder="0"
+              value={data.weight}
+              onChangeText={(text) =>
+                setData({ ...data, weight: text.replace(/[^0-9.]/g, "") })
+              }
+              keyboardType="decimal-pad"
+              errorMessage={errors.weight}
+            />
+          </View>
+          <View style={{ width: 16 }} />
+          <View style={{ flex: 1 }}>
+            <CustomInputTextField
+              label="Height (cm)"
+              placeholder="0"
+              value={data.height}
+              onChangeText={(text) =>
+                setData({ ...data, height: text.replace(/[^0-9.]/g, "") })
+              }
+              keyboardType="decimal-pad"
+              errorMessage={errors.height}
+            />
+          </View>
         </View>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.cardBackground },
-            SHADOWS.small,
-          ]}
+        <View style={{ height: 20 }} />
+
+        <CustomText
+          font="Medium"
+          style={[styles.label, { color: theme.text.secondary }]}
         >
-          <CustomText
-            font="SemiBold"
-            style={[styles.sectionTitle, { color: theme.text.primary }]}
-          >
-            Metrics
-          </CustomText>
-
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <CustomInputTextField
-                label="Weight (kg)"
-                placeholder="0"
-                value={data.weight}
-                onChangeText={(text) =>
-                  setData({ ...data, weight: text.replace(/[^0-9.]/g, "") })
-                }
-                keyboardType="decimal-pad"
-                errorMessage={errors.weight}
-              />
-            </View>
-            <View style={{ width: 16 }} />
-            <View style={{ flex: 1 }}>
-              <CustomInputTextField
-                label="Height (cm)"
-                placeholder="0"
-                value={data.height}
-                onChangeText={(text) =>
-                  setData({ ...data, height: text.replace(/[^0-9.]/g, "") })
-                }
-                keyboardType="decimal-pad"
-                errorMessage={errors.height}
-              />
-            </View>
-          </View>
-
-          <View style={{ height: 20 }} />
-
-          <CustomText
-            font="Medium"
-            style={[styles.label, { color: theme.text.secondary }]}
-          >
-            Gender
-          </CustomText>
-          <View style={styles.genderRow}>
-            {(["male", "female"] as const).map((g) => (
-              <TouchableOpacity
-                key={g}
-                style={[
-                  styles.genderChip,
-                  {
-                    backgroundColor:
-                      data.gender === g ? theme.primary : `${theme.primary}10`,
-                    borderColor:
-                      data.gender === g
-                        ? theme.primary
-                        : theme.inputTextFieldBorderColor,
-                  },
-                ]}
-                onPress={() => setData({ ...data, gender: g })}
-              >
-                <MaterialCommunityIcons
-                  name={g === "male" ? "gender-male" : "gender-female"}
-                  size={20}
-                  color={data.gender === g ? "#fff" : theme.primary}
-                />
-                <CustomText
-                  font="Medium"
-                  style={{
-                    color: data.gender === g ? "#fff" : theme.text.primary,
-                    marginLeft: 8,
-                  }}
-                >
-                  {g.charAt(0).toUpperCase() + g.slice(1)}
-                </CustomText>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {errors.gender && (
-            <CustomText
-              font="Regular"
-              style={[styles.errorText, { color: theme.error }]}
-            >
-              {errors.gender}
-            </CustomText>
-          )}
-        </View>
-
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.cardBackground },
-            SHADOWS.small,
-          ]}
-        >
-          <CustomText
-            font="SemiBold"
-            style={[styles.sectionTitle, { color: theme.text.primary }]}
-          >
-            Activity Level
-          </CustomText>
-
-          {ACTIVITY_LEVELS.map((level) => (
+          Gender
+        </CustomText>
+        <View style={styles.genderRow}>
+          {(["male", "female"] as const).map((g) => (
             <TouchableOpacity
-              key={level.value}
+              key={g}
               style={[
-                styles.activityItem,
+                styles.genderChip,
+                {
+                  backgroundColor:
+                    data.gender === g ? theme.primary : `${theme.primary}10`,
+                  borderColor:
+                    data.gender === g
+                      ? theme.primary
+                      : theme.inputTextFieldBorderColor,
+                },
+              ]}
+              onPress={() => setData({ ...data, gender: g })}
+            >
+              <MaterialCommunityIcons
+                name={g === "male" ? "gender-male" : "gender-female"}
+                size={20}
+                color={data.gender === g ? "#fff" : theme.primary}
+              />
+              <CustomText
+                font="Medium"
+                style={{
+                  color: data.gender === g ? "#fff" : theme.text.primary,
+                  marginLeft: 8,
+                }}
+              >
+                {g.charAt(0).toUpperCase() + g.slice(1)}
+              </CustomText>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.gender && (
+          <CustomText
+            font="Regular"
+            style={[styles.errorText, { color: theme.error }]}
+          >
+            {errors.gender}
+          </CustomText>
+        )}
+      </View>
+
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.small,
+        ]}
+      >
+        <CustomText
+          font="SemiBold"
+          style={[styles.sectionTitle, { color: theme.text.primary }]}
+        >
+          Activity Level
+        </CustomText>
+
+        {ACTIVITY_LEVELS.map((level) => (
+          <TouchableOpacity
+            key={level.value}
+            style={[
+              styles.activityItem,
+              {
+                borderColor:
+                  data.activityLevel === level.value
+                    ? theme.primary
+                    : theme.inputTextFieldBorderColor,
+                backgroundColor:
+                  data.activityLevel === level.value
+                    ? `${theme.primary}10`
+                    : "transparent",
+              },
+            ]}
+            onPress={() => setData({ ...data, activityLevel: level.value })}
+          >
+            <View style={{ flex: 1 }}>
+              <CustomText
+                font="SemiBold"
+                style={{
+                  color:
+                    data.activityLevel === level.value
+                      ? theme.primary
+                      : theme.text.primary,
+                }}
+              >
+                {level.label}
+              </CustomText>
+              <CustomText
+                font="Regular"
+                style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
+              >
+                {level.description}
+              </CustomText>
+            </View>
+            {data.activityLevel === level.value && (
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={24}
+                color={theme.primary}
+              />
+            )}
+          </TouchableOpacity>
+        ))}
+        {errors.activityLevel && (
+          <CustomText
+            font="Regular"
+            style={[styles.errorText, { color: theme.error }]}
+          >
+            {errors.activityLevel}
+          </CustomText>
+        )}
+      </View>
+
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.small,
+        ]}
+      >
+        <CustomText
+          font="SemiBold"
+          style={[styles.sectionTitle, { color: theme.text.primary }]}
+        >
+          Fitness Goal
+        </CustomText>
+
+        <View style={styles.goalRow}>
+          {FITNESS_GOALS.map((goal) => (
+            <TouchableOpacity
+              key={goal.value}
+              style={[
+                styles.goalCard,
                 {
                   borderColor:
-                    data.activityLevel === level.value
+                    data.goal === goal.value
                       ? theme.primary
                       : theme.inputTextFieldBorderColor,
                   backgroundColor:
-                    data.activityLevel === level.value
+                    data.goal === goal.value
                       ? `${theme.primary}10`
                       : "transparent",
                 },
               ]}
-              onPress={() => setData({ ...data, activityLevel: level.value })}
+              onPress={() => setData({ ...data, goal: goal.value as any })}
             >
-              <View style={{ flex: 1 }}>
-                <CustomText
-                  font="SemiBold"
-                  style={{
-                    color:
-                      data.activityLevel === level.value
-                        ? theme.primary
-                        : theme.text.primary,
-                  }}
-                >
-                  {level.label}
-                </CustomText>
-                <CustomText
-                  font="Regular"
-                  style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
-                >
-                  {level.description}
-                </CustomText>
-              </View>
-              {data.activityLevel === level.value && (
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={24}
-                  color={theme.primary}
-                />
-              )}
+              <MaterialCommunityIcons
+                name={goal.icon as any}
+                size={28}
+                color={
+                  data.goal === goal.value ? theme.primary : theme.text.tertiary
+                }
+              />
+              <CustomText
+                font="SemiBold"
+                style={{
+                  color:
+                    data.goal === goal.value
+                      ? theme.primary
+                      : theme.text.primary,
+                  fontSize: RFValue(12),
+                  marginTop: 8,
+                  textAlign: "center",
+                }}
+              >
+                {goal.label}
+              </CustomText>
+              <CustomText
+                font="Regular"
+                style={{
+                  color: theme.text.secondary,
+                  fontSize: RFValue(9),
+                  textAlign: "center",
+                  marginTop: 2,
+                }}
+              >
+                {goal.description}
+              </CustomText>
             </TouchableOpacity>
           ))}
-          {errors.activityLevel && (
-            <CustomText
-              font="Regular"
-              style={[styles.errorText, { color: theme.error }]}
-            >
-              {errors.activityLevel}
-            </CustomText>
-          )}
         </View>
+      </View>
 
-        <CustomButton
-          title="Save Changes"
-          onPress={handleSave}
-          loading={loading}
-          style={styles.saveButton}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <CustomButton
+        title="Save Changes"
+        onPress={handleSave}
+        loading={loading}
+        style={styles.saveButton}
+      />
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -375,6 +459,19 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
     marginBottom: 10,
+  },
+  goalRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  goalCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
   },
   saveButton: {
     marginTop: 8,

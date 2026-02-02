@@ -169,11 +169,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     padding: 24,
     alignItems: "center",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    elevation: 0,
   },
   iconContainer: {
     width: 64,

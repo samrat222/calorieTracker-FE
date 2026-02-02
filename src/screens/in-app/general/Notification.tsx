@@ -315,11 +315,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    // Removed shadows causing artifacts on refresh
+    elevation: 0,
   },
   unreadIndicator: {
     width: 8,

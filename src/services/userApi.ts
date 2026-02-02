@@ -13,6 +13,7 @@ export interface OnboardingPayload {
   height: number;
   gender: "male" | "female";
   activityLevel: number;
+  goal: "lose" | "gain" | "maintain";
 }
 
 export interface UpdateProfilePayload {
@@ -22,6 +23,7 @@ export interface UpdateProfilePayload {
   height?: number;
   gender?: "male" | "female";
   activityLevel?: number;
+  goal?: "lose" | "gain" | "maintain";
 }
 
 export interface ProfileResponse {

@@ -74,20 +74,7 @@ const UpdateChecker = ({ children }: { children: ReactNode }) => {
               marginHorizontal: 40,
               marginBottom: 40,
               paddingTop: 60,
-              ...Platform.select({
-                ios: {
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 0,
-                    height: 0,
-                  },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 4,
-                },
-                android: {
-                  elevation: 10,
-                },
-              }),
+              elevation: 0,
             }}
           >
             {!isMandatory && (

@@ -23,6 +23,7 @@ export interface UserData {
   height?: number;
   gender?: "male" | "female";
   activityLevel?: number;
+  goal?: "lose" | "gain" | "maintain" | null;
   bmi?: number;
   dailyCalorieGoal?: number;
 }

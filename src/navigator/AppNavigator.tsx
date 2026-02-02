@@ -31,6 +31,7 @@ export type RootStackParamList = {
   MEAL_HISTORY: undefined;
   MEAL_DETAIL: { mealId: string };
   EDIT_PROFILE: undefined;
+  EDIT_MEAL: { mealId: string };
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -95,6 +96,13 @@ const AppNavigator = () => {
                     require("@screens/in-app/general/EditProfile").default
                   }
                   options={{ headerTitle: "Edit Profile" }}
+                />
+                <RootStack.Screen
+                  name="EDIT_MEAL"
+                  getComponent={() =>
+                    require("@screens/in-app/general/EditMeal").default
+                  }
+                  options={{ headerTitle: "Edit Meal" }}
                 />
               </RootStack.Group>
             ) : (

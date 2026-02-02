@@ -2,13 +2,12 @@ import React, { FC, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
   Image,
   Alert,
-  Platform,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useAuth } from "@context/AuthProvider";
 import { useUI } from "@context/UiProvider";
 import CustomText from "@components/CustomText";
@@ -182,299 +181,287 @@ const AddMeal: FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bottomOffset={20}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      {/* Meal Type Selector */}
+      <CustomText
+        font="SemiBold"
+        style={[styles.sectionTitle, { color: theme.text.primary }]}
       >
-        {/* Meal Type Selector */}
-        <CustomText
-          font="SemiBold"
-          style={[styles.sectionTitle, { color: theme.text.primary }]}
-        >
-          Meal Type
-        </CustomText>
-        <View style={styles.mealTypeContainer}>
-          {MEAL_TYPES.map((meal) => (
-            <TouchableOpacity
-              key={meal.type}
-              style={[
-                styles.mealTypeButton,
-                {
-                  backgroundColor:
-                    selectedMealType === meal.type
-                      ? `${meal.color}20`
-                      : theme.cardBackground,
-                  borderColor:
-                    selectedMealType === meal.type ? meal.color : "transparent",
-                },
-              ]}
-              onPress={() => setSelectedMealType(meal.type)}
-            >
-              <MaterialCommunityIcons
-                name={meal.icon as any}
-                size={24}
-                color={
+        Meal Type
+      </CustomText>
+      <View style={styles.mealTypeContainer}>
+        {MEAL_TYPES.map((meal) => (
+          <TouchableOpacity
+            key={meal.type}
+            style={[
+              styles.mealTypeButton,
+              {
+                backgroundColor:
+                  selectedMealType === meal.type
+                    ? `${meal.color}20`
+                    : theme.cardBackground,
+                borderColor:
+                  selectedMealType === meal.type ? meal.color : "transparent",
+              },
+            ]}
+            onPress={() => setSelectedMealType(meal.type)}
+          >
+            <MaterialCommunityIcons
+              name={meal.icon as any}
+              size={24}
+              color={
+                selectedMealType === meal.type
+                  ? meal.color
+                  : theme.text.secondary
+              }
+            />
+            <CustomText
+              font="Regular"
+              style={{
+                color:
                   selectedMealType === meal.type
                     ? meal.color
-                    : theme.text.secondary
-                }
+                    : theme.text.secondary,
+                fontSize: RFValue(11),
+                marginTop: 4,
+              }}
+            >
+              {meal.label}
+            </CustomText>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Image Upload */}
+      <CustomText
+        font="SemiBold"
+        style={[
+          styles.sectionTitle,
+          { color: theme.text.primary, marginTop: 24 },
+        ]}
+      >
+        Food Image
+      </CustomText>
+      <View style={styles.imageSection}>
+        {imageUri ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+            <TouchableOpacity
+              style={[styles.removeImageButton, { backgroundColor: theme.red }]}
+              onPress={() => {
+                setImageUri(null);
+                setAnalysisResult(null);
+              }}
+            >
+              <MaterialCommunityIcons name="close" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.uploadButtons}>
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                { backgroundColor: theme.cardBackground },
+              ]}
+              onPress={takePhoto}
+            >
+              <MaterialCommunityIcons
+                name="camera"
+                size={32}
+                color={theme.primary}
               />
               <CustomText
                 font="Regular"
-                style={{
-                  color:
-                    selectedMealType === meal.type
-                      ? meal.color
-                      : theme.text.secondary,
-                  fontSize: RFValue(11),
-                  marginTop: 4,
-                }}
+                style={[styles.uploadText, { color: theme.text.secondary }]}
               >
-                {meal.label}
+                Take Photo
               </CustomText>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Image Upload */}
-        <CustomText
-          font="SemiBold"
-          style={[
-            styles.sectionTitle,
-            { color: theme.text.primary, marginTop: 24 },
-          ]}
-        >
-          Food Image
-        </CustomText>
-        <View style={styles.imageSection}>
-          {imageUri ? (
-            <View style={styles.imagePreviewContainer}>
-              <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-              <TouchableOpacity
-                style={[
-                  styles.removeImageButton,
-                  { backgroundColor: theme.red },
-                ]}
-                onPress={() => {
-                  setImageUri(null);
-                  setAnalysisResult(null);
-                }}
-              >
-                <MaterialCommunityIcons name="close" size={16} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.uploadButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.uploadButton,
-                  { backgroundColor: theme.cardBackground },
-                ]}
-                onPress={takePhoto}
-              >
-                <MaterialCommunityIcons
-                  name="camera"
-                  size={32}
-                  color={theme.primary}
-                />
-                <CustomText
-                  font="Regular"
-                  style={[styles.uploadText, { color: theme.text.secondary }]}
-                >
-                  Take Photo
-                </CustomText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.uploadButton,
-                  { backgroundColor: theme.cardBackground },
-                ]}
-                onPress={pickImage}
-              >
-                <MaterialCommunityIcons
-                  name="image"
-                  size={32}
-                  color={theme.primary}
-                />
-                <CustomText
-                  font="Regular"
-                  style={[styles.uploadText, { color: theme.text.secondary }]}
-                >
-                  Gallery
-                </CustomText>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Description */}
-        <View style={{ marginTop: 24 }}>
-          <CustomInputTextField
-            label="Description (Optional)"
-            placeholder="e.g., Chicken salad with olive oil dressing"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
-        </View>
-
-        {/* Analyze Button */}
-        {!analysisResult && (
-          <CustomButton
-            title={analyzing ? "Analyzing..." : "Analyze Food with AI"}
-            onPress={analyzeFood}
-            loading={analyzing}
-            icon="brain"
-            iconColor="#fff"
-            iconSize={20}
-            style={{ marginTop: 24 }}
-          />
-        )}
-
-        {/* Analysis Result */}
-        {analysisResult && (
-          <View
-            style={[
-              styles.resultCard,
-              { backgroundColor: theme.cardBackground },
-            ]}
-          >
-            <View style={styles.resultHeader}>
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                { backgroundColor: theme.cardBackground },
+              ]}
+              onPress={pickImage}
+            >
               <MaterialCommunityIcons
-                name="check-circle"
-                size={24}
-                color={theme.green}
+                name="image"
+                size={32}
+                color={theme.primary}
               />
               <CustomText
-                font="SemiBold"
-                style={[styles.resultTitle, { color: theme.text.primary }]}
+                font="Regular"
+                style={[styles.uploadText, { color: theme.text.secondary }]}
               >
-                Analysis Result
+                Gallery
               </CustomText>
-            </View>
-
-            <CustomText
-              font="Regular"
-              style={[
-                styles.resultDescription,
-                { color: theme.text.secondary },
-              ]}
-            >
-              {analysisResult?.mealDescription || "No description available"}
-            </CustomText>
-
-            {/* Food Items */}
-            <View style={styles.foodItemsContainer}>
-              {(analysisResult?.foodItems || []).map((item, index) => (
-                <View key={index} style={styles.foodItem}>
-                  <View style={styles.foodItemInfo}>
-                    <CustomText
-                      font="SemiBold"
-                      style={{
-                        color: theme.text.primary,
-                        fontSize: RFValue(13),
-                      }}
-                    >
-                      {item.foodName}
-                    </CustomText>
-                    <CustomText
-                      font="Regular"
-                      style={{
-                        color: theme.text.secondary,
-                        fontSize: RFValue(11),
-                      }}
-                    >
-                      {item.quantity} {item.unit}
-                    </CustomText>
-                  </View>
-                  <CustomText
-                    font="SemiBold"
-                    style={{ color: theme.primary, fontSize: RFValue(13) }}
-                  >
-                    {item.calories} kcal
-                  </CustomText>
-                </View>
-              ))}
-            </View>
-
-            {/* Total Nutrition */}
-            <View
-              style={[styles.totalRow, { borderTopColor: theme.dividerColor }]}
-            >
-              <CustomText
-                font="Bold"
-                style={{ color: theme.text.primary, fontSize: RFValue(14) }}
-              >
-                Total
-              </CustomText>
-              <CustomText
-                font="Bold"
-                style={{ color: theme.primary, fontSize: RFValue(14) }}
-              >
-                {analysisResult?.totalNutrition?.calories || 0} kcal
-              </CustomText>
-            </View>
-
-            <View style={styles.macroSummary}>
-              <View style={styles.macroItem}>
-                <CustomText
-                  font="Regular"
-                  style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
-                >
-                  Protein
-                </CustomText>
-                <CustomText
-                  font="SemiBold"
-                  style={{ color: theme.text.primary, fontSize: RFValue(12) }}
-                >
-                  {analysisResult?.totalNutrition?.protein || 0}g
-                </CustomText>
-              </View>
-              <View style={styles.macroItem}>
-                <CustomText
-                  font="Regular"
-                  style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
-                >
-                  Carbs
-                </CustomText>
-                <CustomText
-                  font="SemiBold"
-                  style={{ color: theme.text.primary, fontSize: RFValue(12) }}
-                >
-                  {analysisResult?.totalNutrition?.carbs || 0}g
-                </CustomText>
-              </View>
-              <View style={styles.macroItem}>
-                <CustomText
-                  font="Regular"
-                  style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
-                >
-                  Fats
-                </CustomText>
-                <CustomText
-                  font="SemiBold"
-                  style={{ color: theme.text.primary, fontSize: RFValue(12) }}
-                >
-                  {analysisResult?.totalNutrition?.fats || 0}g
-                </CustomText>
-              </View>
-            </View>
-
-            <CustomButton
-              title={saving ? "Saving..." : "Quick Log Meal"}
-              onPress={quickLog}
-              loading={saving}
-              style={{ marginTop: 16 }}
-            />
+            </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+
+      {/* Description */}
+      <View style={{ marginTop: 24 }}>
+        <CustomInputTextField
+          label="Description (Optional)"
+          placeholder="e.g., Chicken salad with olive oil dressing"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+      </View>
+
+      {/* Analyze Button */}
+      {!analysisResult && (
+        <CustomButton
+          title={analyzing ? "Analyzing..." : "Analyze Food with AI"}
+          onPress={analyzeFood}
+          loading={analyzing}
+          icon="brain"
+          iconColor="#fff"
+          iconSize={20}
+          style={{ marginTop: 24 }}
+        />
+      )}
+
+      {/* Analysis Result */}
+      {analysisResult && (
+        <View
+          style={[styles.resultCard, { backgroundColor: theme.cardBackground }]}
+        >
+          <View style={styles.resultHeader}>
+            <MaterialCommunityIcons
+              name="check-circle"
+              size={24}
+              color={theme.green}
+            />
+            <CustomText
+              font="SemiBold"
+              style={[styles.resultTitle, { color: theme.text.primary }]}
+            >
+              Analysis Result
+            </CustomText>
+          </View>
+
+          <CustomText
+            font="Regular"
+            style={[styles.resultDescription, { color: theme.text.secondary }]}
+          >
+            {analysisResult?.mealDescription || "No description available"}
+          </CustomText>
+
+          {/* Food Items */}
+          <View style={styles.foodItemsContainer}>
+            {(analysisResult?.foodItems || []).map((item, index) => (
+              <View key={index} style={styles.foodItem}>
+                <View style={styles.foodItemInfo}>
+                  <CustomText
+                    font="SemiBold"
+                    style={{
+                      color: theme.text.primary,
+                      fontSize: RFValue(13),
+                    }}
+                  >
+                    {item.foodName}
+                  </CustomText>
+                  <CustomText
+                    font="Regular"
+                    style={{
+                      color: theme.text.secondary,
+                      fontSize: RFValue(11),
+                    }}
+                  >
+                    {item.quantity} {item.unit}
+                  </CustomText>
+                </View>
+                <CustomText
+                  font="SemiBold"
+                  style={{ color: theme.primary, fontSize: RFValue(13) }}
+                >
+                  {item.calories} kcal
+                </CustomText>
+              </View>
+            ))}
+          </View>
+
+          {/* Total Nutrition */}
+          <View
+            style={[styles.totalRow, { borderTopColor: theme.dividerColor }]}
+          >
+            <CustomText
+              font="Bold"
+              style={{ color: theme.text.primary, fontSize: RFValue(14) }}
+            >
+              Total
+            </CustomText>
+            <CustomText
+              font="Bold"
+              style={{ color: theme.primary, fontSize: RFValue(14) }}
+            >
+              {analysisResult?.totalNutrition?.calories || 0} kcal
+            </CustomText>
+          </View>
+
+          <View style={styles.macroSummary}>
+            <View style={styles.macroItem}>
+              <CustomText
+                font="Regular"
+                style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
+              >
+                Protein
+              </CustomText>
+              <CustomText
+                font="SemiBold"
+                style={{ color: theme.text.primary, fontSize: RFValue(12) }}
+              >
+                {analysisResult?.totalNutrition?.protein || 0}g
+              </CustomText>
+            </View>
+            <View style={styles.macroItem}>
+              <CustomText
+                font="Regular"
+                style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
+              >
+                Carbs
+              </CustomText>
+              <CustomText
+                font="SemiBold"
+                style={{ color: theme.text.primary, fontSize: RFValue(12) }}
+              >
+                {analysisResult?.totalNutrition?.carbs || 0}g
+              </CustomText>
+            </View>
+            <View style={styles.macroItem}>
+              <CustomText
+                font="Regular"
+                style={{ color: theme.text.secondary, fontSize: RFValue(11) }}
+              >
+                Fats
+              </CustomText>
+              <CustomText
+                font="SemiBold"
+                style={{ color: theme.text.primary, fontSize: RFValue(12) }}
+              >
+                {analysisResult?.totalNutrition?.fats || 0}g
+              </CustomText>
+            </View>
+          </View>
+
+          <CustomButton
+            title={saving ? "Saving..." : "Quick Log Meal"}
+            onPress={quickLog}
+            loading={saving}
+            style={{ marginTop: 16 }}
+          />
+        </View>
+      )}
+    </KeyboardAwareScrollView>
   );
 };
 

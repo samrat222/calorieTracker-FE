@@ -4,16 +4,8 @@
  */
 
 import React, { FC, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-  Pressable,
-  ScrollView,
-  Image,
-} from "react-native";
+import { View, StyleSheet, Keyboard, Pressable, Image } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useAuth } from "@context/AuthProvider";
 import CustomButton from "@components/CustomButton";
@@ -96,132 +88,129 @@ const Login: FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bottomOffset={20}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      {/* Logo & Branding */}
+      <Animated.View
+        style={styles.brandingContainer}
+        entering={FadeInUp.delay(100).springify()}
       >
-        {/* Logo & Branding */}
-        <Animated.View
-          style={styles.brandingContainer}
-          entering={FadeInUp.delay(100).springify()}
+        <View
+          style={[styles.logoCircle, { backgroundColor: theme.primaryLight }]}
         >
-          <View
-            style={[styles.logoCircle, { backgroundColor: theme.primaryLight }]}
-          >
-            <MaterialCommunityIcons
-              name="food-apple"
-              size={48}
-              color={theme.primary}
-            />
-          </View>
-          <CustomText
-            font="Bold"
-            style={[styles.appName, { color: theme.primary }]}
-          >
-            CalorieTracker
-          </CustomText>
+          <MaterialCommunityIcons
+            name="food-apple"
+            size={48}
+            color={theme.primary}
+          />
+        </View>
+        <CustomText
+          font="Bold"
+          style={[styles.appName, { color: theme.primary }]}
+        >
+          CalorieTracker
+        </CustomText>
+        <CustomText
+          font="Regular"
+          style={[styles.tagline, { color: theme.text.secondary }]}
+        >
+          Track your nutrition journey
+        </CustomText>
+      </Animated.View>
+
+      {/* Login Card */}
+      <Animated.View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.medium,
+        ]}
+        entering={FadeInDown.delay(200).springify()}
+      >
+        <CustomText
+          font="Bold"
+          style={[styles.welcomeText, { color: theme.text.primary }]}
+        >
+          Welcome Back
+        </CustomText>
+        <CustomText
+          font="Regular"
+          style={[styles.welcomeSubtext, { color: theme.text.secondary }]}
+        >
+          Sign in to continue tracking
+        </CustomText>
+
+        <View style={styles.formContainer}>
+          <CustomInputTextField
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            errorMessage={errors.email}
+            leftIcon="email-outline"
+          />
+
+          <View style={{ height: 16 }} />
+
+          <CustomInputTextField
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password)
+                setErrors({ ...errors, password: undefined });
+            }}
+            secureEntry
+            errorMessage={errors.password}
+            leftIcon="lock-outline"
+          />
+
+          <View style={{ height: 24 }} />
+
+          <CustomButton
+            title="Login"
+            onPress={handleLogin}
+            loading={loading}
+            icon="login"
+          />
+        </View>
+      </Animated.View>
+
+      {/* Sign Up Link */}
+      <Animated.View
+        style={styles.signUpContainer}
+        entering={FadeInDown.delay(300).springify()}
+      >
+        <Pressable
+          onPress={() => navigation.navigate("REGISTER")}
+          style={styles.signUpButton}
+        >
           <CustomText
             font="Regular"
-            style={[styles.tagline, { color: theme.text.secondary }]}
+            style={[styles.signUpText, { color: theme.text.secondary }]}
           >
-            Track your nutrition journey
-          </CustomText>
-        </Animated.View>
-
-        {/* Login Card */}
-        <Animated.View
-          style={[
-            styles.card,
-            { backgroundColor: theme.cardBackground },
-            SHADOWS.medium,
-          ]}
-          entering={FadeInDown.delay(200).springify()}
-        >
-          <CustomText
-            font="Bold"
-            style={[styles.welcomeText, { color: theme.text.primary }]}
-          >
-            Welcome Back
+            Don't have an account?{" "}
           </CustomText>
           <CustomText
-            font="Regular"
-            style={[styles.welcomeSubtext, { color: theme.text.secondary }]}
+            font="SemiBold"
+            style={[styles.signUpLink, { color: theme.primary }]}
           >
-            Sign in to continue tracking
+            Sign Up
           </CustomText>
-
-          <View style={styles.formContainer}>
-            <CustomInputTextField
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({ ...errors, email: undefined });
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              errorMessage={errors.email}
-              leftIcon="email-outline"
-            />
-
-            <View style={{ height: 16 }} />
-
-            <CustomInputTextField
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password)
-                  setErrors({ ...errors, password: undefined });
-              }}
-              secureEntry
-              errorMessage={errors.password}
-              leftIcon="lock-outline"
-            />
-
-            <View style={{ height: 24 }} />
-
-            <CustomButton
-              title="Login"
-              onPress={handleLogin}
-              loading={loading}
-              icon="login"
-            />
-          </View>
-        </Animated.View>
-
-        {/* Sign Up Link */}
-        <Animated.View
-          style={styles.signUpContainer}
-          entering={FadeInDown.delay(300).springify()}
-        >
-          <Pressable
-            onPress={() => navigation.navigate("REGISTER")}
-            style={styles.signUpButton}
-          >
-            <CustomText
-              font="Regular"
-              style={[styles.signUpText, { color: theme.text.secondary }]}
-            >
-              Don't have an account?{" "}
-            </CustomText>
-            <CustomText
-              font="SemiBold"
-              style={[styles.signUpLink, { color: theme.primary }]}
-            >
-              Sign Up
-            </CustomText>
-          </Pressable>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </Pressable>
+      </Animated.View>
+    </KeyboardAwareScrollView>
   );
 };
 

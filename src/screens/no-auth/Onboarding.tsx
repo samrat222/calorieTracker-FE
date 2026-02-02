@@ -6,9 +6,8 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useAuth } from "@context/AuthProvider";
 import CustomButton from "@components/CustomButton";
 import CustomText from "@components/CustomText";
@@ -28,6 +27,7 @@ interface OnboardingData {
   height: string;
   gender: "male" | "female" | null;
   activityLevel: number | null;
+  goal: "lose" | "gain" | "maintain" | null;
 }
 
 const ACTIVITY_LEVELS = [
@@ -46,6 +46,27 @@ const ACTIVITY_LEVELS = [
   },
 ];
 
+const FITNESS_GOALS = [
+  {
+    value: "lose",
+    label: "Lose Weight",
+    description: "Healthy calorie deficit",
+    icon: "trending-down",
+  },
+  {
+    value: "maintain",
+    label: "Maintain",
+    description: "Keep your current weight",
+    icon: "scale-bathroom",
+  },
+  {
+    value: "gain",
+    label: "Gain Weight",
+    description: "Healthy calorie surplus",
+    icon: "trending-up",
+  },
+];
+
 const Onboarding: FC = () => {
   const { token, setProfile } = useAuth();
   const { showToast, theme } = useUI();
@@ -60,13 +81,14 @@ const Onboarding: FC = () => {
     height: "",
     gender: null,
     activityLevel: null,
+    goal: null,
   });
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof OnboardingData, string>>
   >({});
 
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   const animateSlide = (toStep: number) => {
     Animated.spring(slideAnim, {
@@ -104,6 +126,9 @@ const Onboarding: FC = () => {
         if (!data.activityLevel)
           newErrors.activityLevel = "Please select your activity level";
         break;
+      case 4:
+        if (!data.goal) newErrors.goal = "Please select your fitness goal";
+        break;
     }
 
     setErrors(newErrors);
@@ -129,7 +154,7 @@ const Onboarding: FC = () => {
   };
 
   const handleComplete = async () => {
-    if (!validateStep(currentStep)) return;
+    if (!validateStep(currentStep) || !token) return;
 
     setLoading(true);
     try {
@@ -140,6 +165,7 @@ const Onboarding: FC = () => {
         height: parseFloat(data.height),
         gender: data.gender!,
         activityLevel: data.activityLevel!,
+        goal: data.goal!,
       });
 
       if (response.success) {
@@ -511,10 +537,124 @@ const Onboarding: FC = () => {
     </View>
   );
 
+  const renderStep5 = () => (
+    <View style={styles.stepContent}>
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: `${theme.primary}20` },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name="bullseye-arrow"
+          size={48}
+          color={theme.primary}
+        />
+      </View>
+      <CustomText
+        font="Bold"
+        style={[styles.stepTitle, { color: theme.text.primary }]}
+      >
+        Choose your goal
+      </CustomText>
+      <CustomText
+        font="Regular"
+        style={[styles.stepSubtitle, { color: theme.text.secondary }]}
+      >
+        We'll adjust your daily calories accordingly
+      </CustomText>
+
+      <View style={styles.activityList}>
+        {FITNESS_GOALS.map((goal) => (
+          <TouchableOpacity
+            key={goal.value}
+            style={[
+              styles.activityCard,
+              {
+                borderColor:
+                  data.goal === goal.value
+                    ? theme.primary
+                    : theme.inputTextFieldBorderColor,
+                backgroundColor:
+                  data.goal === goal.value
+                    ? `${theme.primary}10`
+                    : "transparent",
+              },
+            ]}
+            onPress={() => {
+              setData({ ...data, goal: goal.value as any });
+              if (errors.goal as any) setErrors({ ...errors, goal: undefined });
+            }}
+          >
+            <View
+              style={[
+                styles.goalIconCircle,
+                {
+                  backgroundColor:
+                    data.goal === goal.value
+                      ? theme.primary
+                      : `${theme.text.tertiary}20`,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={goal.icon as any}
+                size={24}
+                color={data.goal === goal.value ? "#fff" : theme.text.secondary}
+              />
+            </View>
+            <View style={styles.activityContent}>
+              <CustomText
+                font="SemiBold"
+                style={{
+                  color:
+                    data.goal === goal.value
+                      ? theme.primary
+                      : theme.text.primary,
+                  fontSize: RFValue(14),
+                }}
+              >
+                {goal.label}
+              </CustomText>
+              <CustomText
+                font="Regular"
+                style={{
+                  color: theme.text.secondary,
+                  fontSize: RFValue(12),
+                  marginTop: 2,
+                }}
+              >
+                {goal.description}
+              </CustomText>
+            </View>
+            {data.goal === goal.value && (
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={24}
+                color={theme.primary}
+              />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+      {errors.goal && (
+        <CustomText
+          font="Regular"
+          style={[styles.errorText, { color: theme.red }]}
+        >
+          {errors.goal}
+        </CustomText>
+      )}
+    </View>
+  );
+
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      contentContainerStyle={{ flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bottomOffset={20}
     >
       {renderProgressBar()}
 
@@ -532,6 +672,7 @@ const Onboarding: FC = () => {
           <View style={{ width: SCREEN_WIDTH }}>{renderStep2()}</View>
           <View style={{ width: SCREEN_WIDTH }}>{renderStep3()}</View>
           <View style={{ width: SCREEN_WIDTH }}>{renderStep4()}</View>
+          <View style={{ width: SCREEN_WIDTH }}>{renderStep5()}</View>
         </Animated.View>
       </View>
 
@@ -561,7 +702,7 @@ const Onboarding: FC = () => {
           />
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -642,6 +783,14 @@ const styles = StyleSheet.create({
   },
   activityContent: {
     flex: 1,
+  },
+  goalIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
   errorText: {
     fontSize: RFValue(12),

@@ -11,7 +11,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import React, { FC, useState } from "react";
+import React, { FC, useState, forwardRef } from "react";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,139 +45,148 @@ interface InputTextFieldProps extends TextInputProps {
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-const CustomInputTextField: FC<InputTextFieldProps> = ({
-  labelColor,
-  inputColor,
-  borderColor,
-  borderWidth,
-  label,
-  disableColor,
-  inputContainerStyle,
-  secureEntry,
-  placeholder,
-  required,
-  value,
-  errorMessage,
-  onChangeText,
-  leftIcon,
-  ...rest
-}) => {
-  const { theme } = useUI();
-  const [isPasswordSecure, setIsPasswordSecure] = useState(secureEntry);
-  const [isFocused, setIsFocused] = useState(false);
+const CustomInputTextField = forwardRef<TextInput, InputTextFieldProps>(
+  (
+    {
+      labelColor,
+      inputColor,
+      borderColor,
+      borderWidth,
+      label,
+      disableColor,
+      inputContainerStyle,
+      secureEntry,
+      placeholder,
+      required,
+      value,
+      errorMessage,
+      onChangeText,
+      leftIcon,
+      ...rest
+    },
+    ref,
+  ) => {
+    const { theme } = useUI();
+    const [isPasswordSecure, setIsPasswordSecure] = useState(secureEntry);
+    const [isFocused, setIsFocused] = useState(false);
 
-  // Animation for focus state
-  const focusAnimation = useSharedValue(0);
+    // Animation for focus state
+    const focusAnimation = useSharedValue(0);
 
-  const handleFocus = () => {
-    setIsFocused(true);
-    focusAnimation.value = withTiming(1, { duration: 200 });
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    focusAnimation.value = withTiming(0, { duration: 200 });
-  };
-
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    const borderColorAnimated = interpolateColor(
-      focusAnimation.value,
-      [0, 1],
-      [theme.inputBorder, theme.primary],
-    );
-
-    return {
-      borderColor: errorMessage ? theme.error : borderColorAnimated,
+    const handleFocus = () => {
+      setIsFocused(true);
+      focusAnimation.value = withTiming(1, { duration: 200 });
     };
-  });
 
-  const getBorderColor = () => {
-    if (errorMessage) return theme.error;
-    if (isFocused) return theme.primary;
-    return borderColor || theme.inputBorder;
-  };
+    const handleBlur = () => {
+      setIsFocused(false);
+      focusAnimation.value = withTiming(0, { duration: 200 });
+    };
 
-  return (
-    <View style={styles.container}>
-      {label && (
-        <View style={styles.labelRow}>
-          <CustomText
-            font="Medium"
-            style={[styles.label, { color: labelColor || theme.text.primary }]}
-          >
-            {label}
-          </CustomText>
-          {required && (
+    const animatedContainerStyle = useAnimatedStyle(() => {
+      const borderColorAnimated = interpolateColor(
+        focusAnimation.value,
+        [0, 1],
+        [theme.inputBorder, theme.primary],
+      );
+
+      return {
+        borderColor: errorMessage ? theme.error : borderColorAnimated,
+      };
+    });
+
+    const getBorderColor = () => {
+      if (errorMessage) return theme.error;
+      if (isFocused) return theme.primary;
+      return borderColor || theme.inputBorder;
+    };
+
+    return (
+      <View style={styles.container}>
+        {label && (
+          <View style={styles.labelRow}>
             <CustomText
               font="Medium"
-              style={[styles.label, { color: theme.error, marginLeft: 4 }]}
+              style={[
+                styles.label,
+                { color: labelColor || theme.text.primary },
+              ]}
             >
-              *
+              {label}
             </CustomText>
-          )}
-        </View>
-      )}
-
-      <AnimatedView
-        style={[
-          styles.inputContainer,
-          {
-            backgroundColor: disableColor || theme.inputBackground,
-            borderWidth: borderWidth || 1.5,
-            borderColor: getBorderColor(),
-          },
-          isFocused && SHADOWS.small,
-          inputContainerStyle,
-          animatedContainerStyle,
-        ]}
-      >
-        {leftIcon && (
-          <MaterialCommunityIcons
-            name={leftIcon}
-            size={20}
-            color={isFocused ? theme.primary : theme.text.tertiary}
-            style={styles.leftIcon}
-          />
+            {required && (
+              <CustomText
+                font="Medium"
+                style={[styles.label, { color: theme.error, marginLeft: 4 }]}
+              >
+                *
+              </CustomText>
+            )}
+          </View>
         )}
 
-        <TextInput
+        <AnimatedView
           style={[
-            styles.input,
+            styles.inputContainer,
             {
-              color: inputColor || theme.inputTextColor,
-              fontFamily: getFontName("Regular"),
+              backgroundColor: disableColor || theme.inputBackground,
+              borderWidth: borderWidth || 1.5,
+              borderColor: getBorderColor(),
             },
+            isFocused && SHADOWS.small,
+            inputContainerStyle,
+            animatedContainerStyle,
           ]}
-          autoCapitalize="none"
-          secureTextEntry={isPasswordSecure}
-          value={value}
-          placeholder={placeholder}
-          placeholderTextColor={theme.inputPlaceholderColor}
-          onChangeText={onChangeText}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          {...rest}
-        />
-
-        {secureEntry && (
-          <TouchableOpacity
-            style={styles.iconContainer}
-            onPress={() => setIsPasswordSecure(!isPasswordSecure)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+        >
+          {leftIcon && (
             <MaterialCommunityIcons
-              name={isPasswordSecure ? "eye-off-outline" : "eye-outline"}
-              size={22}
-              color={theme.text.tertiary}
+              name={leftIcon}
+              size={20}
+              color={isFocused ? theme.primary : theme.text.tertiary}
+              style={styles.leftIcon}
             />
-          </TouchableOpacity>
-        )}
-      </AnimatedView>
+          )}
 
-      {errorMessage && <ErrorMessage message={errorMessage} />}
-    </View>
-  );
-};
+          <TextInput
+            ref={ref}
+            style={[
+              styles.input,
+              {
+                color: inputColor || theme.inputTextColor,
+                fontFamily: getFontName("Regular"),
+              },
+            ]}
+            autoCapitalize="none"
+            secureTextEntry={isPasswordSecure}
+            value={value}
+            placeholder={placeholder}
+            placeholderTextColor={theme.inputPlaceholderColor}
+            onChangeText={onChangeText}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            {...rest}
+          />
+
+          {secureEntry && (
+            <TouchableOpacity
+              style={styles.iconContainer}
+              onPress={() => setIsPasswordSecure(!isPasswordSecure)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialCommunityIcons
+                name={isPasswordSecure ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color={theme.text.tertiary}
+              />
+            </TouchableOpacity>
+          )}
+        </AnimatedView>
+
+        {errorMessage && <ErrorMessage message={errorMessage} />}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {

@@ -22,6 +22,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import userApi from "src/services/userApi";
 import authApi from "src/services/authApi";
+import * as SecureStore from "expo-secure-store";
 import { RADIUS, SHADOWS } from "@utils/colors";
 import SkeletonLoader from "@components/SkeletonLoader";
 
@@ -116,15 +117,28 @@ const Profile: FC = () => {
   const { theme, showToast } = useUI();
   const navigation = useNavigation<any>();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!profile);
   const [refreshing, setRefreshing] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
 
-  const fetchData = async () => {
+  const loadCachedStats = async () => {
+    try {
+      const cachedStats = await SecureStore.getItemAsync("user_stats");
+      if (cachedStats) {
+        setStats(JSON.parse(cachedStats));
+        if (profile) setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error loading cached stats:", error);
+    }
+  };
+
+  const fetchData = async (isBackground = false) => {
     if (!token) return;
+    if (!isBackground && !profile) setLoading(true);
 
     try {
       const [profileRes, statsRes] = await Promise.all([
@@ -137,15 +151,22 @@ const Profile: FC = () => {
       }
       if (statsRes.success) {
         setStats(statsRes.data);
+        // Cache stats
+        await SecureStore.setItemAsync(
+          "user_stats",
+          JSON.stringify(statsRes.data),
+        );
       }
     } catch (error: any) {
-      showToast({
-        message: error.message || "Failed to load profile",
-        success: false,
-        title: "Error",
-        visible: true,
-        duration: 3000,
-      });
+      if (!isBackground) {
+        showToast({
+          message: error.message || "Failed to load profile",
+          success: false,
+          title: "Error",
+          visible: true,
+          duration: 3000,
+        });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,7 +175,8 @@ const Profile: FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      loadCachedStats();
+      fetchData(!!profile);
     }, [token]),
   );
 
@@ -203,7 +225,39 @@ const Profile: FC = () => {
     return { label: "Obese", color: theme.error };
   };
 
+  const getGoalInfo = (
+    goal?: string | null,
+  ): { label: string; color: string; icon: string } => {
+    switch (goal) {
+      case "lose":
+        return {
+          label: "Weight Loss",
+          color: theme.warning,
+          icon: "trending-down",
+        };
+      case "gain":
+        return {
+          label: "Muscle Gain",
+          color: theme.success,
+          icon: "trending-up",
+        };
+      case "maintain":
+        return {
+          label: "Maintenance",
+          color: theme.info,
+          icon: "scale-bathroom",
+        };
+      default:
+        return {
+          label: "Stay Healthy",
+          color: theme.primary,
+          icon: "heart-pulse",
+        };
+    }
+  };
+
   const bmiInfo = getBMICategory(stats?.currentBMI || profile?.bmi);
+  const goalInfo = getGoalInfo(profile?.goal);
 
   if (loading) {
     return <SkeletonProfile />;
@@ -516,6 +570,31 @@ const Profile: FC = () => {
                 {getActivityLevelLabel(profile?.activityLevel)}
               </CustomText>
             </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <CustomText
+                font="Regular"
+                style={[styles.infoLabel, { color: theme.text.secondary }]}
+              >
+                Fitness Goal
+              </CustomText>
+              <View style={styles.bmiContainer}>
+                <MaterialCommunityIcons
+                  name={goalInfo.icon as any}
+                  size={18}
+                  color={goalInfo.color}
+                />
+                <CustomText
+                  font="SemiBold"
+                  style={[styles.infoValue, { color: theme.text.primary }]}
+                >
+                  {goalInfo.label}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.infoItem} />
           </View>
         </Animated.View>
 

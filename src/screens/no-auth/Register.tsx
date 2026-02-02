@@ -4,15 +4,8 @@
  */
 
 import React, { FC, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-  Pressable,
-  ScrollView,
-} from "react-native";
+import { View, StyleSheet, Keyboard, Pressable } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useAuth } from "@context/AuthProvider";
 import CustomButton from "@components/CustomButton";
@@ -112,148 +105,144 @@ const Register: FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bottomOffset={20}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      {/* Header */}
+      <Animated.View
+        style={styles.headerContainer}
+        entering={FadeInUp.delay(100).springify()}
       >
-        {/* Header */}
-        <Animated.View
-          style={styles.headerContainer}
-          entering={FadeInUp.delay(100).springify()}
+        <View
+          style={[styles.iconCircle, { backgroundColor: theme.primaryLight }]}
         >
-          <View
-            style={[styles.iconCircle, { backgroundColor: theme.primaryLight }]}
-          >
-            <MaterialCommunityIcons
-              name="account-plus"
-              size={48}
-              color={theme.primary}
-            />
-          </View>
-          <CustomText
-            font="Bold"
-            style={[styles.title, { color: theme.text.primary }]}
-          >
-            Create Account
-          </CustomText>
+          <MaterialCommunityIcons
+            name="account-plus"
+            size={48}
+            color={theme.primary}
+          />
+        </View>
+        <CustomText
+          font="Bold"
+          style={[styles.title, { color: theme.text.primary }]}
+        >
+          Create Account
+        </CustomText>
+        <CustomText
+          font="Regular"
+          style={[styles.subtitle, { color: theme.text.secondary }]}
+        >
+          Start your health journey today
+        </CustomText>
+      </Animated.View>
+
+      {/* Form Card */}
+      <Animated.View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+          SHADOWS.medium,
+        ]}
+        entering={FadeInDown.delay(200).springify()}
+      >
+        <CustomInputTextField
+          label="Full Name"
+          placeholder="Enter your full name"
+          value={name}
+          onChangeText={(text) => {
+            setName(text);
+            if (errors.name) setErrors({ ...errors, name: undefined });
+          }}
+          autoCapitalize="words"
+          errorMessage={errors.name}
+          leftIcon="account-outline"
+        />
+
+        <View style={{ height: 16 }} />
+
+        <CustomInputTextField
+          label="Email"
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (errors.email) setErrors({ ...errors, email: undefined });
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          errorMessage={errors.email}
+          leftIcon="email-outline"
+        />
+
+        <View style={{ height: 16 }} />
+
+        <CustomInputTextField
+          label="Password"
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errors.password) setErrors({ ...errors, password: undefined });
+          }}
+          secureEntry
+          errorMessage={errors.password}
+          leftIcon="lock-outline"
+        />
+
+        <View style={{ height: 16 }} />
+
+        <CustomInputTextField
+          label="Confirm Password"
+          placeholder="Re-enter your password"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            if (errors.confirmPassword)
+              setErrors({ ...errors, confirmPassword: undefined });
+          }}
+          secureEntry
+          errorMessage={errors.confirmPassword}
+          leftIcon="lock-check-outline"
+        />
+
+        <View style={{ height: 24 }} />
+
+        <CustomButton
+          title="Create Account"
+          onPress={handleRegister}
+          loading={loading}
+          icon="account-plus"
+        />
+      </Animated.View>
+
+      {/* Login Link */}
+      <Animated.View
+        style={styles.loginContainer}
+        entering={FadeInDown.delay(300).springify()}
+      >
+        <Pressable
+          onPress={() => navigation.navigate("LOGIN")}
+          style={styles.loginButton}
+        >
           <CustomText
             font="Regular"
-            style={[styles.subtitle, { color: theme.text.secondary }]}
+            style={[styles.loginText, { color: theme.text.secondary }]}
           >
-            Start your health journey today
+            Already have an account?{" "}
           </CustomText>
-        </Animated.View>
-
-        {/* Form Card */}
-        <Animated.View
-          style={[
-            styles.card,
-            { backgroundColor: theme.cardBackground },
-            SHADOWS.medium,
-          ]}
-          entering={FadeInDown.delay(200).springify()}
-        >
-          <CustomInputTextField
-            label="Full Name"
-            placeholder="Enter your full name"
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              if (errors.name) setErrors({ ...errors, name: undefined });
-            }}
-            autoCapitalize="words"
-            errorMessage={errors.name}
-            leftIcon="account-outline"
-          />
-
-          <View style={{ height: 16 }} />
-
-          <CustomInputTextField
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) setErrors({ ...errors, email: undefined });
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            errorMessage={errors.email}
-            leftIcon="email-outline"
-          />
-
-          <View style={{ height: 16 }} />
-
-          <CustomInputTextField
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password)
-                setErrors({ ...errors, password: undefined });
-            }}
-            secureEntry
-            errorMessage={errors.password}
-            leftIcon="lock-outline"
-          />
-
-          <View style={{ height: 16 }} />
-
-          <CustomInputTextField
-            label="Confirm Password"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              if (errors.confirmPassword)
-                setErrors({ ...errors, confirmPassword: undefined });
-            }}
-            secureEntry
-            errorMessage={errors.confirmPassword}
-            leftIcon="lock-check-outline"
-          />
-
-          <View style={{ height: 24 }} />
-
-          <CustomButton
-            title="Create Account"
-            onPress={handleRegister}
-            loading={loading}
-            icon="account-plus"
-          />
-        </Animated.View>
-
-        {/* Login Link */}
-        <Animated.View
-          style={styles.loginContainer}
-          entering={FadeInDown.delay(300).springify()}
-        >
-          <Pressable
-            onPress={() => navigation.navigate("LOGIN")}
-            style={styles.loginButton}
+          <CustomText
+            font="SemiBold"
+            style={[styles.loginLink, { color: theme.primary }]}
           >
-            <CustomText
-              font="Regular"
-              style={[styles.loginText, { color: theme.text.secondary }]}
-            >
-              Already have an account?{" "}
-            </CustomText>
-            <CustomText
-              font="SemiBold"
-              style={[styles.loginLink, { color: theme.primary }]}
-            >
-              Login
-            </CustomText>
-          </Pressable>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            Login
+          </CustomText>
+        </Pressable>
+      </Animated.View>
+    </KeyboardAwareScrollView>
   );
 };
 

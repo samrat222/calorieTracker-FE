@@ -17,6 +17,7 @@ import {
 } from "@expo-google-fonts/nunito-sans";
 import SplashScreen from "@components/SplashScreen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 LogBox.ignoreAllLogs(true);
 
 export default function App() {
@@ -33,18 +34,20 @@ export default function App() {
   }
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <UiProvider>
-          <AuthProvider>
-            <CustomBottomSheetProvider>
-              <NetworkProvider>
-                <AppNavigator />
-              </NetworkProvider>
-            </CustomBottomSheetProvider>
-          </AuthProvider>
-        </UiProvider>
-        <StatusBar style="dark" translucent backgroundColor="transparent" />
-      </GestureHandlerRootView>
+      <KeyboardProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <UiProvider>
+            <AuthProvider>
+              <CustomBottomSheetProvider>
+                <NetworkProvider>
+                  <AppNavigator />
+                </NetworkProvider>
+              </CustomBottomSheetProvider>
+            </AuthProvider>
+          </UiProvider>
+          <StatusBar style="dark" translucent backgroundColor="transparent" />
+        </GestureHandlerRootView>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }

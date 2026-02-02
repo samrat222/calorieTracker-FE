@@ -27,6 +27,7 @@ import CalorieRing from "@components/CalorieRing";
 import MealCard from "@components/MealCard";
 import MacroBar from "@components/MacroBar";
 import mealApi, { Meal, MealType } from "src/services/mealApi";
+import * as SecureStore from "expo-secure-store";
 import { RADIUS, SHADOWS } from "@utils/colors";
 import { SkeletonDashboard } from "@components/SkeletonLoader";
 
@@ -55,7 +56,7 @@ const Dashboard: FC = () => {
   const { theme, showToast } = useUI();
   const navigation = useNavigation<any>();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!profile);
   const [refreshing, setRefreshing] = useState(false);
   const [animationKey, setAnimationKey] = useState(0); // Key to re-trigger animations
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -68,21 +69,50 @@ const Dashboard: FC = () => {
   });
   const [goal, setGoal] = useState(profile?.dailyCalorieGoal || 2000);
 
-  console.log("token", token);
-
   // FAB animation
   const fabScale = useSharedValue(1);
   const fabAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: fabScale.value }],
   }));
 
-  const fetchTodaysMeals = async () => {
+  const loadCachedData = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const [cachedSummary, cachedMeals] = await Promise.all([
+        SecureStore.getItemAsync("todays_summary"),
+        SecureStore.getItemAsync("todays_meals"),
+      ]);
+
+      if (cachedSummary) {
+        const parsedSummary = JSON.parse(cachedSummary);
+        if (parsedSummary.date === today) {
+          setSummary(parsedSummary.data);
+          setGoal(parsedSummary.goal || profile?.dailyCalorieGoal || 2000);
+          setLoading(false);
+        }
+      }
+
+      if (cachedMeals) {
+        const parsedMeals = JSON.parse(cachedMeals);
+        if (parsedMeals.date === today) {
+          setMeals(parsedMeals.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading cached dashboard data:", error);
+    }
+  };
+
+  const fetchTodaysMeals = async (isBackground = false) => {
     if (!token) return;
+    if (!isBackground && !meals.length) setLoading(true);
 
     try {
       const response = await mealApi.getTodaysMeals(token);
       if (response.success) {
         const data = response.data;
+        const today = new Date().toISOString().split("T")[0];
+
         setMeals(data?.meals || []);
         setSummary({
           totalCalories: data?.totals?.totalCalories || 0,
@@ -92,15 +122,42 @@ const Dashboard: FC = () => {
           mealsCount: data?.mealsCount || 0,
         });
         setGoal(data?.goal || profile?.dailyCalorieGoal || 2000);
+
+        // Cache data
+        await Promise.all([
+          SecureStore.setItemAsync(
+            "todays_summary",
+            JSON.stringify({
+              date: today,
+              data: {
+                totalCalories: data?.totals?.totalCalories || 0,
+                totalProtein: data?.totals?.totalProtein || 0,
+                totalCarbs: data?.totals?.totalCarbs || 0,
+                totalFats: data?.totals?.totalFats || 0,
+                mealsCount: data?.mealsCount || 0,
+              },
+              goal: data?.goal || profile?.dailyCalorieGoal || 2000,
+            }),
+          ),
+          SecureStore.setItemAsync(
+            "todays_meals",
+            JSON.stringify({
+              date: today,
+              data: data?.meals || [],
+            }),
+          ),
+        ]);
       }
     } catch (error: any) {
-      showToast({
-        message: error.message || "Failed to load meals",
-        success: false,
-        title: "Error",
-        visible: true,
-        duration: 3000,
-      });
+      if (!isBackground) {
+        showToast({
+          message: error.message || "Failed to load meals",
+          success: false,
+          title: "Error",
+          visible: true,
+          duration: 3000,
+        });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -109,7 +166,8 @@ const Dashboard: FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchTodaysMeals();
+      loadCachedData();
+      fetchTodaysMeals(true);
     }, [token]),
   );
 

@@ -197,7 +197,7 @@ export const SHADOWS = {
       shadowRadius: 2,
     },
     android: {
-      elevation: 1,
+      elevation: 0,
     },
   }),
   medium: Platform.select({
@@ -208,7 +208,7 @@ export const SHADOWS = {
       shadowRadius: 4,
     },
     android: {
-      elevation: 2,
+      elevation: 0,
     },
   }),
   large: Platform.select({
@@ -219,7 +219,7 @@ export const SHADOWS = {
       shadowRadius: 8,
     },
     android: {
-      elevation: 4,
+      elevation: 0,
     },
   }),
 };
