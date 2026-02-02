@@ -146,6 +146,7 @@ const notificationService = {
     remoteMessage: FirebaseMessagingTypes.RemoteMessage,
   ): Promise<void> => {
     const { title, body } = remoteMessage.notification || {};
+    console.log("himashu bhaiya is super", title, body);
 
     if (title && body) {
       await Notifications.scheduleNotificationAsync({
@@ -206,8 +207,8 @@ const notificationService = {
       }
 
       // Modify this based on your app's navigation structure
-      navigationRef.navigate("NOTIFICATION" as any);
-      Notifications.dismissAllNotificationsAsync();
+      // navigationRef.navigate("NOTIFICATION" as any);
+      // Notifications.dismissAllNotificationsAsync();
     } catch (error) {
       console.error("Error handling notification navigation:", error);
     }
