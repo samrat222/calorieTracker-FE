@@ -17,7 +17,6 @@ import AddMeal from "@screens/in-app/general/AddMeal";
 import MealHistory from "@screens/in-app/general/MealHistory";
 import MealDetail from "@screens/in-app/general/MealDetail";
 import { useUI } from "@context/UiProvider";
-import { useNotifications } from "@hooks/useNotifications";
 
 export type RootStackParamList = {
   LOGIN: undefined;
@@ -39,9 +38,6 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator = () => {
   const { token, loading, isOnboarded } = useAuth();
   const { theme } = useUI();
-
-  // Initialize notifications
-  useNotifications();
 
   if (loading) {
     return <SplashScreen />;

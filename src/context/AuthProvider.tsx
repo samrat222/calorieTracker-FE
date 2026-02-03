@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import { UserData } from "src/services/authApi";
+import notificationService from "src/services/notificationService";
 
 interface AuthContextType {
   token: string | null;
@@ -80,6 +81,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initialize();
   }, []);
+
+  useEffect(() => {
+    if (!token || !profile) return;
+
+    notificationService.initializeNotifications(token, false);
+
+    return () => {
+      notificationService.cleanupNotifications();
+    };
+  }, [token, profile?.id]);
 
   return (
     <AuthContext.Provider

@@ -8,6 +8,7 @@ import {
 import DeviceInfo from "react-native-device-info";
 import { navigationRef, prettier } from "@utils/utils";
 import { API_BASE_URL } from "src/constants/constants";
+import { Platform } from "react-native";
 
 // Configure how notifications should be handled when the app is running
 Notifications.setNotificationHandler({
@@ -34,6 +35,31 @@ export const messaging = getMessaging(app);
 
 let foregroundUnsubscribe: (() => void) | null = null;
 let notificationResponseSubscription: any = null;
+let notificationsInitialized = false;
+let lastDeviceInfo: DeviceInfoResult | null = null;
+
+const setupNotificationChannel = async (): Promise<void> => {
+  if (Platform.OS !== "android") return;
+
+  await Notifications.setNotificationChannelAsync("default", {
+    name: "default",
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: "#FF231F7C",
+  });
+};
+
+const getMessageTitleAndBody = (
+  remoteMessage: FirebaseMessagingTypes.RemoteMessage,
+): { title?: string; body?: string } => {
+  const notification = remoteMessage.notification;
+  const data = remoteMessage.data || {};
+
+  return {
+    title: notification?.title ?? data.title,
+    body: notification?.body ?? data.body,
+  };
+};
 
 const notificationService = {
   /**
@@ -42,10 +68,24 @@ const notificationService = {
   requestNotificationPermission:
     async (): Promise<NotificationPermissionResult> => {
       try {
+        await setupNotificationChannel();
+
         const authStatus = await messaging.requestPermission();
         const granted =
           authStatus === AuthorizationStatus.AUTHORIZED ||
           authStatus === AuthorizationStatus.PROVISIONAL;
+
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status !== "granted") {
+          const { status: newStatus } =
+            await Notifications.requestPermissionsAsync();
+          if (newStatus !== "granted") {
+            return {
+              granted: false,
+              status: authStatus,
+            };
+          }
+        }
 
         return {
           granted,
@@ -145,8 +185,7 @@ const notificationService = {
   handleForegroundMessage: async (
     remoteMessage: FirebaseMessagingTypes.RemoteMessage,
   ): Promise<void> => {
-    const { title, body } = remoteMessage.notification || {};
-    console.log("himashu bhaiya is super", title, body);
+    const { title, body } = getMessageTitleAndBody(remoteMessage);
 
     if (title && body) {
       await Notifications.scheduleNotificationAsync({
@@ -192,6 +231,7 @@ const notificationService = {
     messaging.setBackgroundMessageHandler(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
         prettier("FCM message received in background", remoteMessage);
+        await notificationService.handleForegroundMessage(remoteMessage);
       },
     );
   },
@@ -237,6 +277,22 @@ const notificationService = {
             notificationService.handleNotificationNavigation(data);
           }
         });
+
+      Notifications.getLastNotificationResponseAsync()
+        .then((response) => {
+          if (!response) return;
+          prettier("Notification tapped (cold start)", response);
+          const data =
+            Object.keys(response.notification.request.content.data).length > 0
+              ? response.notification.request.content.data
+              : null;
+          if (data) {
+            notificationService.handleNotificationNavigation(data);
+          }
+        })
+        .catch((error) => {
+          console.error("Error getting last notification response:", error);
+        });
     } catch (error) {
       console.error("Error setting up notification listeners:", error);
     }
@@ -254,6 +310,8 @@ const notificationService = {
       notificationResponseSubscription.remove();
       notificationResponseSubscription = null;
     }
+    notificationsInitialized = false;
+    lastDeviceInfo = null;
   },
 
   /**
@@ -264,6 +322,17 @@ const notificationService = {
     isLogin: boolean = false,
   ): Promise<DeviceInfoResult | null> => {
     try {
+      if (notificationsInitialized && lastDeviceInfo) {
+        if (isLogin) {
+          await notificationService.updateTokenOnBackend(
+            lastDeviceInfo.fcmToken,
+            authToken,
+            true,
+          );
+        }
+        return lastDeviceInfo;
+      }
+
       const permissionResult =
         await notificationService.requestNotificationPermission();
 
@@ -285,6 +354,9 @@ const notificationService = {
 
       notificationService.setupForegroundMessaging();
       notificationService.setupNotificationListeners();
+
+      notificationsInitialized = true;
+      lastDeviceInfo = deviceInfo;
 
       return deviceInfo;
     } catch (error) {

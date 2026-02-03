@@ -1,22 +1,31 @@
-import React, { FC } from "react";
+import React, { FC, useEffect, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import {
   Canvas,
   Circle,
   Path,
   Skia,
-  Text,
-  useFont,
+  SweepGradient,
+  vec,
 } from "@shopify/react-native-skia";
 import { useUI } from "@context/UiProvider";
 import CustomText from "./CustomText";
 import { RFValue } from "react-native-responsive-fontsize";
+import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 
 interface CalorieRingProps {
   consumed: number;
   goal: number;
   size?: number;
 }
+
+// Gradient color stops for different progress levels
+const GRADIENT_COLORS = {
+  level1: "#EF4444", // Red (0-25%)
+  level2: "#F97316", // Orange (25-50%)
+  level3: "#EAB308", // Yellow (50-75%)
+  level4: "#22C55E", // Green (75-100%)
+};
 
 const CalorieRing: FC<CalorieRingProps> = ({ consumed, goal, size = 200 }) => {
   const { theme } = useUI();
@@ -25,35 +34,59 @@ const CalorieRing: FC<CalorieRingProps> = ({ consumed, goal, size = 200 }) => {
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
 
-  const percentage = Math.min((consumed / goal) * 100, 100);
+  const percentage = goal > 0 ? Math.min((consumed / goal) * 100, 100) : 0;
   const remaining = goal - consumed;
+  const targetProgress = Math.min(Math.max(percentage / 100, 0), 1);
 
-  // Create arc path
-  const startAngle = -90;
-  const sweepAngle = (percentage / 100) * 360;
-  const endAngle = startAngle + sweepAngle;
+  const progress = useSharedValue(0);
 
-  const startRad = (startAngle * Math.PI) / 180;
-  const endRad = (endAngle * Math.PI) / 180;
+  useEffect(() => {
+    progress.value = withTiming(targetProgress, {
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progress, targetProgress]);
 
-  const path = Skia.Path.Make();
-  path.addArc(
-    {
-      x: center - radius,
-      y: center - radius,
-      width: radius * 2,
-      height: radius * 2,
-    },
-    startAngle,
-    sweepAngle,
-  );
+  const path = useMemo(() => {
+    const fullPath = Skia.Path.Make();
+    fullPath.addArc(
+      {
+        x: center - radius,
+        y: center - radius,
+        width: radius * 2,
+        height: radius * 2,
+      },
+      -90,
+      360,
+    );
+    return fullPath;
+  }, [center, radius]);
 
-  // Determine color based on consumption
-  const getProgressColor = () => {
-    if (percentage >= 100) return theme.red;
-    if (percentage >= 90) return theme.orange;
-    return theme.green;
-  };
+  // Get gradient colors based on progress percentage
+  const getGradientColors = useMemo(() => {
+    if (percentage <= 25) {
+      // Just red
+      return [GRADIENT_COLORS.level1, GRADIENT_COLORS.level1];
+    } else if (percentage <= 50) {
+      // Red to Orange
+      return [GRADIENT_COLORS.level1, GRADIENT_COLORS.level2];
+    } else if (percentage <= 75) {
+      // Red to Orange to Yellow
+      return [
+        GRADIENT_COLORS.level1,
+        GRADIENT_COLORS.level2,
+        GRADIENT_COLORS.level3,
+      ];
+    } else {
+      // Full gradient: Red to Orange to Yellow to Green
+      return [
+        GRADIENT_COLORS.level1,
+        GRADIENT_COLORS.level2,
+        GRADIENT_COLORS.level3,
+        GRADIENT_COLORS.level4,
+      ];
+    }
+  }, [percentage]);
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -67,14 +100,17 @@ const CalorieRing: FC<CalorieRingProps> = ({ consumed, goal, size = 200 }) => {
           strokeWidth={strokeWidth}
           color={theme.inputTextFieldBorderColor}
         />
-        {/* Progress arc */}
+        {/* Progress arc with gradient */}
         <Path
           path={path}
           style="stroke"
           strokeWidth={strokeWidth}
           strokeCap="round"
-          color={getProgressColor()}
-        />
+          start={0}
+          end={progress}
+        >
+          <SweepGradient c={vec(center, center)} colors={getGradientColors} />
+        </Path>
       </Canvas>
 
       {/* Center text */}
@@ -130,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   consumedText: {
-    fontSize: RFValue(32),
+    fontSize: RFValue(28),
   },
   labelText: {
     fontSize: RFValue(12),

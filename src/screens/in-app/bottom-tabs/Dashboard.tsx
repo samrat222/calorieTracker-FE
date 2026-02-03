@@ -68,6 +68,11 @@ const Dashboard: FC = () => {
     mealsCount: 0,
   });
   const [goal, setGoal] = useState(profile?.dailyCalorieGoal || 2000);
+  const remainingCalories = Math.max(0, goal - summary.totalCalories);
+  const progressPercent =
+    goal > 0
+      ? Math.min(100, Math.round((summary.totalCalories / goal) * 100))
+      : 0;
 
   // FAB animation
   const fabScale = useSharedValue(1);
@@ -234,6 +239,20 @@ const Dashboard: FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View
+        pointerEvents="none"
+        style={[
+          styles.decorCirclePrimary,
+          { backgroundColor: theme.primaryLight },
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.decorCircleSecondary,
+          { backgroundColor: theme.surface },
+        ]}
+      />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -257,7 +276,7 @@ const Dashboard: FC = () => {
               font="Regular"
               style={[styles.greeting, { color: theme.text.secondary }]}
             >
-              {greeting()} 👋
+              {greeting()}
             </CustomText>
             <CustomText
               font="Bold"
@@ -265,6 +284,27 @@ const Dashboard: FC = () => {
             >
               {profile?.name || "User"}
             </CustomText>
+            <View style={styles.headerMetaRow}>
+              <View
+                style={[
+                  styles.headerChip,
+                  { backgroundColor: theme.primaryLight },
+                ]}
+              >
+                <CustomText
+                  font="Medium"
+                  style={[styles.headerChipText, { color: theme.primary }]}
+                >
+                  Today
+                </CustomText>
+              </View>
+              <CustomText
+                font="Regular"
+                style={[styles.headerHint, { color: theme.text.tertiary }]}
+              >
+                {progressPercent}% of goal
+              </CustomText>
+            </View>
           </View>
           <Pressable
             style={[
@@ -292,6 +332,13 @@ const Dashboard: FC = () => {
           ]}
           entering={FadeInDown.delay(100).springify()}
         >
+          <View
+            pointerEvents="none"
+            style={[
+              styles.progressGlow,
+              { backgroundColor: theme.primaryLight },
+            ]}
+          />
           <View style={styles.progressHeader}>
             <CustomText
               font="SemiBold"
@@ -313,6 +360,12 @@ const Dashboard: FC = () => {
               </CustomText>
             </View>
           </View>
+          <CustomText
+            font="Regular"
+            style={[styles.progressSubtitle, { color: theme.text.secondary }]}
+          >
+            {summary.totalCalories} consumed · {remainingCalories} remaining
+          </CustomText>
 
           <View style={styles.ringContainer}>
             <CalorieRing
@@ -323,10 +376,8 @@ const Dashboard: FC = () => {
           </View>
 
           {/* Stats Row */}
-          <View
-            style={[styles.statsRow, { borderTopColor: theme.dividerColor }]}
-          >
-            <View style={styles.statItem}>
+          <View style={styles.statsRow}>
+            <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
               <CustomText
                 font="Bold"
                 style={[styles.statValue, { color: theme.primary }]}
@@ -340,18 +391,12 @@ const Dashboard: FC = () => {
                 Consumed
               </CustomText>
             </View>
-            <View
-              style={[
-                styles.statDivider,
-                { backgroundColor: theme.dividerColor },
-              ]}
-            />
-            <View style={styles.statItem}>
+            <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
               <CustomText
                 font="Bold"
                 style={[styles.statValue, { color: theme.success }]}
               >
-                {Math.max(0, goal - summary.totalCalories)}
+                {remainingCalories}
               </CustomText>
               <CustomText
                 font="Regular"
@@ -360,13 +405,7 @@ const Dashboard: FC = () => {
                 Remaining
               </CustomText>
             </View>
-            <View
-              style={[
-                styles.statDivider,
-                { backgroundColor: theme.dividerColor },
-              ]}
-            />
-            <View style={styles.statItem}>
+            <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
               <CustomText
                 font="Bold"
                 style={[styles.statValue, { color: theme.text.primary }]}
@@ -388,16 +427,32 @@ const Dashboard: FC = () => {
           key={`quick-${animationKey}`}
           entering={FadeInDown.delay(150).springify()}
         >
-          <CustomText
-            font="SemiBold"
-            style={[styles.sectionTitle, { color: theme.text.primary }]}
+          <View style={styles.sectionHeader}>
+            <CustomText
+              font="SemiBold"
+              style={[styles.sectionTitle, { color: theme.text.primary }]}
+            >
+              Quick Add
+            </CustomText>
+            <CustomText
+              font="Regular"
+              style={[styles.sectionHint, { color: theme.text.tertiary }]}
+            >
+              Tap to log
+            </CustomText>
+          </View>
+          <View
+            style={[
+              styles.quickActionsCard,
+              { backgroundColor: theme.cardBackground },
+              SHADOWS.small,
+            ]}
           >
-            Quick Add
-          </CustomText>
-          <View style={styles.quickActionsRow}>
-            {QUICK_ACTIONS.map((action, index) =>
-              renderQuickAction(action, index),
-            )}
+            <View style={styles.quickActionsRow}>
+              {QUICK_ACTIONS.map((action, index) =>
+                renderQuickAction(action, index),
+              )}
+            </View>
           </View>
         </Animated.View>
 
@@ -411,12 +466,20 @@ const Dashboard: FC = () => {
           ]}
           entering={FadeInDown.delay(200).springify()}
         >
-          <CustomText
-            font="SemiBold"
-            style={[styles.cardTitle, { color: theme.text.primary }]}
-          >
-            Today's Macros
-          </CustomText>
+          <View style={styles.sectionHeader}>
+            <CustomText
+              font="SemiBold"
+              style={[styles.cardTitle, { color: theme.text.primary }]}
+            >
+              Today's Macros
+            </CustomText>
+            <CustomText
+              font="Regular"
+              style={[styles.sectionHint, { color: theme.text.tertiary }]}
+            >
+              Protein · Carbs · Fats
+            </CustomText>
+          </View>
           <MacroBar
             protein={summary.totalProtein}
             carbs={summary.totalCarbs}
@@ -521,15 +584,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  decorCirclePrimary: {
+    position: "absolute",
+    top: -60,
+    right: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    opacity: 0.7,
+  },
+  decorCircleSecondary: {
+    position: "absolute",
+    top: 140,
+    left: -90,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    opacity: 0.6,
+  },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 100,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   greeting: {
     fontSize: RFValue(13),
@@ -537,6 +619,23 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: RFValue(22),
+  },
+  headerMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  headerChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    marginRight: 8,
+  },
+  headerChipText: {
+    fontSize: RFValue(11),
+  },
+  headerHint: {
+    fontSize: RFValue(11),
   },
   historyButton: {
     width: 44,
@@ -547,14 +646,24 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     borderRadius: RADIUS.xl,
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
+    overflow: "hidden",
+  },
+  progressGlow: {
+    position: "absolute",
+    top: -40,
+    right: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    opacity: 0.6,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 6,
   },
   progressTitle: {
     fontSize: RFValue(16),
@@ -567,19 +676,25 @@ const styles = StyleSheet.create({
   goalBadgeText: {
     fontSize: RFValue(12),
   },
+  progressSubtitle: {
+    fontSize: RFValue(12),
+    marginBottom: 10,
+  },
   ringContainer: {
     alignItems: "center",
     marginBottom: 16,
   },
   statsRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingTop: 16,
-    borderTopWidth: 1,
+    justifyContent: "space-between",
+    paddingTop: 8,
   },
   statItem: {
     alignItems: "center",
     flex: 1,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    marginHorizontal: 4,
   },
   statValue: {
     fontSize: RFValue(18),
@@ -588,21 +703,29 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: RFValue(11),
   },
-  statDivider: {
-    width: 1,
-    height: 30,
-    alignSelf: "center",
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  sectionHint: {
+    fontSize: RFValue(11),
+  },
+  quickActionsCard: {
+    borderRadius: RADIUS.lg,
+    padding: 16,
+    marginBottom: 16,
   },
   quickActionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
   },
   quickAction: {
     alignItems: "center",
     padding: 12,
     borderRadius: RADIUS.lg,
-    width: 78,
+    width: 74,
   },
   quickActionIcon: {
     width: 48,
@@ -618,24 +741,17 @@ const styles = StyleSheet.create({
   macrosCard: {
     borderRadius: RADIUS.lg,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   cardTitle: {
     fontSize: RFValue(14),
-    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: RFValue(15),
-    marginBottom: 12,
   },
   mealsSection: {
     flex: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    marginTop: 8,
   },
   mealCount: {
     fontSize: RFValue(12),
