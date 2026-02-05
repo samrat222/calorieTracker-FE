@@ -238,6 +238,29 @@ const AddMeal: FC = () => {
         ))}
       </View>
 
+      <TouchableOpacity
+        style={[
+          styles.previousMealsButton,
+          {
+            backgroundColor: `${theme.primary}15`,
+            borderColor: theme.primary,
+          },
+        ]}
+        onPress={() => navigation.navigate("PREVIOUS_MEALS")}
+      >
+        <MaterialCommunityIcons
+          name="history"
+          size={20}
+          color={theme.primary}
+        />
+        <CustomText
+          font="Medium"
+          style={{ color: theme.primary, fontSize: RFValue(12), marginLeft: 8 }}
+        >
+          Choose from Previous Meals
+        </CustomText>
+      </TouchableOpacity>
+
       {/* Image Upload */}
       <CustomText
         font="SemiBold"
@@ -489,6 +512,16 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 2,
+  },
+  previousMealsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderStyle: "dashed",
   },
   imageSection: {
     width: "100%",

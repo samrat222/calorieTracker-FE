@@ -353,6 +353,31 @@ const mealApi = {
     }
     return data;
   },
+
+  /**
+   * Get unique previous meals
+   */
+  getPreviousMeals: async (
+    token: string,
+    limit: number = 50,
+  ): Promise<{ success: boolean; data: { meals: Meal[] } }> => {
+    const response = await fetch(
+      `${API_BASE_URL}/meals/previous?limit=${limit}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to get previous meals");
+    }
+    return data;
+  },
 };
 
 export default mealApi;
