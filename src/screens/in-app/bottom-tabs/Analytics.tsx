@@ -19,6 +19,7 @@ import analyticsApi, {
   WeeklyAnalytics,
   MonthlyAnalytics,
 } from "src/services/analyticsApi";
+import mealApi from "src/services/mealApi";
 import { RADIUS, SHADOWS } from "@utils/colors";
 import SkeletonLoader from "@components/SkeletonLoader";
 
@@ -38,6 +39,9 @@ const Analytics: FC = () => {
   const [dailyData, setDailyData] = useState<DailyAnalytics | null>(null);
   const [weeklyData, setWeeklyData] = useState<WeeklyAnalytics | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyAnalytics | null>(null);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const [selectedDayMeals, setSelectedDayMeals] = useState<any[]>([]);
+  const [mealsLoading, setMealsLoading] = useState(false);
 
   const fetchAnalytics = async () => {
     if (!token) return;
@@ -50,7 +54,20 @@ const Analytics: FC = () => {
       ]);
 
       if (daily.success) setDailyData(daily.data);
-      if (weekly.success) setWeeklyData(weekly.data);
+      if (weekly.success) {
+        setWeeklyData(weekly.data);
+        // Initially select today or last day
+        const todayStr = new Date().toISOString().split("T")[0];
+        const index = weekly.data.dailyBreakdown.findIndex(
+          (d: any) => d.date.split("T")[0] === todayStr,
+        );
+        const initialIndex =
+          index !== -1 ? index : weekly.data.dailyBreakdown.length - 1;
+        setSelectedDayIndex(initialIndex);
+        if (weekly.data.dailyBreakdown[initialIndex]) {
+          fetchDayMeals(weekly.data.dailyBreakdown[initialIndex].date);
+        }
+      }
       if (monthly.success) setMonthlyData(monthly.data);
     } catch (error: any) {
       showToast({
@@ -63,6 +80,30 @@ const Analytics: FC = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const fetchDayMeals = async (date: string) => {
+    if (!token) return;
+    setMealsLoading(true);
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Use mealApi.getMeals
+      const mealsResponse = await mealApi.getMeals(token, {
+        startDate: date.split("T")[0],
+        endDate: date.split("T")[0],
+      });
+      if (mealsResponse.success) {
+        setSelectedDayMeals(mealsResponse.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch day meals:", error);
+    } finally {
+      setMealsLoading(false);
     }
   };
 
@@ -120,9 +161,12 @@ const Analytics: FC = () => {
     if (!dailyData) return null;
 
     return (
-      <View style={styles.content}>
+      <View key={animationKey} style={styles.content}>
         {/* Today's Summary Card */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <View style={styles.cardHeader}>
             <CustomText
               font="SemiBold"
@@ -224,10 +268,13 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Macros Card */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -302,10 +349,11 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Message Card */}
-        <View
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
           style={[
             styles.messageCard,
             { backgroundColor: `${getStatusColor(dailyData.status)}15` },
@@ -327,7 +375,7 @@ const Analytics: FC = () => {
           >
             {dailyData.message}
           </CustomText>
-        </View>
+        </Animated.View>
       </View>
     );
   };
@@ -341,9 +389,12 @@ const Analytics: FC = () => {
     );
 
     return (
-      <View style={styles.content}>
+      <View key={animationKey} style={styles.content}>
         {/* Weekly Chart */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -352,19 +403,37 @@ const Analytics: FC = () => {
           </CustomText>
           <View style={styles.chartContainer}>
             {(weeklyData.dailyBreakdown || []).map((day, index) => (
-              <View key={index} style={styles.barWrapper}>
+              <Pressable
+                key={index}
+                style={styles.barWrapper}
+                onPress={() => {
+                  setSelectedDayIndex(index);
+                  fetchDayMeals(day.date);
+                }}
+              >
                 <View
                   style={[
                     styles.barBackground,
-                    { backgroundColor: theme.inputTextFieldBorderColor },
+                    {
+                      backgroundColor: theme.inputTextFieldBorderColor,
+                      borderColor:
+                        selectedDayIndex === index
+                          ? theme.primary
+                          : "transparent",
+                      borderWidth: selectedDayIndex === index ? 2 : 0,
+                    },
                   ]}
                 >
                   <View
                     style={[
                       styles.barFill,
                       {
-                        height: `${(day.totalCalories / maxCalories) * 100}%`,
-                        backgroundColor: theme.primary,
+                        height: `${Math.max((day.totalCalories / maxCalories) * 100, 5)}%`,
+                        backgroundColor:
+                          selectedDayIndex === index
+                            ? theme.primary
+                            : "#FFA500",
+                        opacity: selectedDayIndex === index ? 1 : 0.6,
                       },
                     ]}
                   />
@@ -372,7 +441,10 @@ const Analytics: FC = () => {
                 <CustomText
                   font="Regular"
                   style={{
-                    color: theme.text.secondary,
+                    color:
+                      selectedDayIndex === index
+                        ? theme.primary
+                        : theme.text.secondary,
                     fontSize: RFValue(10),
                     marginTop: 4,
                   }}
@@ -381,13 +453,152 @@ const Analytics: FC = () => {
                     .toLocaleDateString(undefined, { weekday: "short" })
                     .charAt(0)}
                 </CustomText>
-              </View>
+              </Pressable>
             ))}
           </View>
-        </View>
+        </Animated.View>
+
+        {/* Selected Day Meals */}
+        {selectedDayIndex !== null && (
+          <Animated.View
+            entering={FadeInDown.delay(200).springify()}
+            style={[styles.card, { backgroundColor: theme.cardBackground }]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <CustomText
+                font="SemiBold"
+                style={{ color: theme.text.primary, fontSize: RFValue(14) }}
+              >
+                Meals for{" "}
+                {new Date(
+                  weeklyData.dailyBreakdown[selectedDayIndex].date,
+                ).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </CustomText>
+              <CustomText
+                font="Bold"
+                style={{ color: theme.primary, fontSize: RFValue(14) }}
+              >
+                {weeklyData.dailyBreakdown[selectedDayIndex].totalCalories} kcal
+              </CustomText>
+            </View>
+
+            {mealsLoading ? (
+              <View style={{ paddingVertical: 20 }}>
+                <SkeletonLoader width={"100%"} height={50} borderRadius={8} />
+              </View>
+            ) : selectedDayMeals.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {selectedDayMeals.map((meal, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: 12,
+                      backgroundColor: theme.surface,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: theme.inputBorder,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: `${theme.primary}20`,
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name={
+                            meal.mealType === "breakfast"
+                              ? "coffee-outline"
+                              : meal.mealType === "lunch"
+                                ? "food-outline"
+                                : meal.mealType === "dinner"
+                                  ? "food-variant"
+                                  : "apple"
+                          }
+                          size={20}
+                          color={theme.primary}
+                        />
+                      </View>
+                      <View>
+                        <CustomText
+                          font="SemiBold"
+                          style={{
+                            color: theme.text.primary,
+                            fontSize: RFValue(12),
+                          }}
+                        >
+                          {meal.mealType.charAt(0).toUpperCase() +
+                            meal.mealType.slice(1)}
+                        </CustomText>
+                        <CustomText
+                          font="Regular"
+                          style={{
+                            color: theme.text.secondary,
+                            fontSize: RFValue(10),
+                          }}
+                        >
+                          {new Date(meal.mealDate).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </CustomText>
+                      </View>
+                    </View>
+                    <CustomText
+                      font="Bold"
+                      style={{
+                        color: theme.text.primary,
+                        fontSize: RFValue(12),
+                      }}
+                    >
+                      {meal.totalCalories} kcal
+                    </CustomText>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                <CustomText
+                  font="Regular"
+                  style={{ color: theme.text.secondary, fontSize: RFValue(12) }}
+                >
+                  No meals logged for this day.
+                </CustomText>
+              </View>
+            )}
+          </Animated.View>
+        )}
 
         {/* Weekly Stats */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -452,10 +663,13 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Macro Breakdown */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(400).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -521,7 +735,7 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     );
   };
@@ -530,9 +744,12 @@ const Analytics: FC = () => {
     if (!monthlyData) return null;
 
     return (
-      <View style={styles.content}>
+      <View key={animationKey} style={styles.content}>
         {/* Monthly Summary */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -597,10 +814,13 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Weekly Trends */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -631,10 +851,13 @@ const Analytics: FC = () => {
               </View>
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Average Macros */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={[styles.card, { backgroundColor: theme.cardBackground }]}
+        >
           <CustomText
             font="SemiBold"
             style={[styles.cardTitle, { color: theme.text.primary }]}
@@ -685,7 +908,7 @@ const Analytics: FC = () => {
               </CustomText>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     );
   };
@@ -730,6 +953,7 @@ const Analytics: FC = () => {
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={theme.primary}
+              colors={[theme.primary]}
             />
           }
         >

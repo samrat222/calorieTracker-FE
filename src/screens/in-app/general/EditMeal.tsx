@@ -23,6 +23,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import mealApi, { FoodItem, MealType, Meal } from "src/services/mealApi";
+import { compressImage } from "@utils/imageUtils";
 import ConfirmationModal from "@components/ConfirmationModal";
 
 const MEAL_TYPES: {
@@ -181,7 +182,8 @@ const EditMeal: FC = () => {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      const compressed = await compressImage(result.assets[0].uri);
+      setImageUri(compressed ? compressed.uri : result.assets[0].uri);
       setExistingImageUrl(null);
     }
   };
@@ -200,7 +202,8 @@ const EditMeal: FC = () => {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      const compressed = await compressImage(result.assets[0].uri);
+      setImageUri(compressed ? compressed.uri : result.assets[0].uri);
       setExistingImageUrl(null);
     }
   };

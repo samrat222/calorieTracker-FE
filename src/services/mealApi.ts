@@ -37,6 +37,7 @@ export interface Meal {
 export interface CreateMealPayload {
   mealType: MealType;
   description?: string;
+  imageUrl?: string;
   totalCalories: number;
   protein?: number;
   carbs?: number;
@@ -203,7 +204,8 @@ const mealApi = {
     }
 
     Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined) {
+      // Important: don't append if value is null or undefined to avoid "null" string
+      if (value !== undefined && value !== null) {
         if (key === "foodItems") {
           formData.append(key, JSON.stringify(value));
         } else {
@@ -308,7 +310,8 @@ const mealApi = {
     }
 
     Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined) {
+      // Important: don't append if value is null or undefined to avoid "null" string
+      if (value !== undefined && value !== null) {
         if (key === "foodItems") {
           formData.append(key, JSON.stringify(value));
         } else {

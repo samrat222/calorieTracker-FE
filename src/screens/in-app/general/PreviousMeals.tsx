@@ -67,6 +67,7 @@ const PreviousMeals: FC = () => {
       const result = await mealApi.createMeal(token!, {
         mealType: meal.mealType,
         description: meal.description,
+        imageUrl: meal.imageUrl,
         totalCalories: meal.totalCalories,
         protein: meal.protein,
         carbs: meal.carbs,

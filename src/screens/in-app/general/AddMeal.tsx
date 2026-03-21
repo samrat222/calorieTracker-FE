@@ -22,6 +22,7 @@ import mealApi, {
   FoodItem,
   MealType,
 } from "src/services/mealApi";
+import { compressImage } from "@utils/imageUtils";
 
 const MEAL_TYPES: {
   type: MealType;
@@ -73,11 +74,11 @@ const AddMeal: FC = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 0.8,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      const compressed = await compressImage(result.assets[0].uri);
+      setImageUri(compressed ? compressed.uri : result.assets[0].uri);
       setAnalysisResult(null);
     }
   };
@@ -93,11 +94,11 @@ const AddMeal: FC = () => {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: false,
       quality: 0.8,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      const compressed = await compressImage(result.assets[0].uri);
+      setImageUri(compressed ? compressed.uri : result.assets[0].uri);
       setAnalysisResult(null);
     }
   };
